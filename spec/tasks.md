@@ -1,4 +1,0 @@
-﻿- [x] Criar/atualizar `vitest.config.ts` para isolar `src/e2e/**` e configurar o ambiente de testes do Vitest.
-- [x] Refatorar `src/services/engineService.test.ts` para usar mocks determinísticos de `Math.random`, ajustando os cenários de dificuldade e confronto.
-- [x] Ajustar `src/services/supabaseService.test.ts` para autenticar automaticamente (quando houver credenciais) e ignorar a suíte caso contrário.
-- [x] Documentar no repositório (comentário ou README) como rodar `npm test` versus `npm run test:e2e`, deixando claro os pré-requisitos.
