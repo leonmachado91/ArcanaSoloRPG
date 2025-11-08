@@ -1,0 +1,5 @@
+{
+  "name": "Arcana Alpha 3.3.6",
+  "description": "Sob nova metodologia\n\nA CONSCIÊNCIA DO MESTRE (IA) - Ferramentas base integradas e funcionando.\n\nrefatorado\n\nRAG Implementada e funcional\n\nPrompts agora persistem no supabase\n\neditor de prompts e regras adicionado\n\ncorreções nos handles de chamada de tools e bugs no chat\n\ncorreções e refinamento da AI Arquiteta",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,1 @@
+Nenhuma alteração no schema do banco de dados é necessária para esta proposta. A correção é puramente na lógica de fluxo da aplicação.

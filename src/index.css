@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html.text-sm { font-size: 14px; }
+  html.text-base { font-size: 16px; }
+  html.text-lg { font-size: 18px; }
+
+  body {
+    background-color: #080808; /* Cor do Fundo */
+    color: #f5f0e1; /* Cor do Texto */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale; /* Equivalente a antialiased */
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Cinzel', serif;
+  }
+
+  .font-body-serif {
+    font-family: 'Merriweather', serif;
+  }
+}
+
+/* High Contrast Accessibility Styles */
+@layer utilities {
+    .high-contrast {
+        @apply bg-black text-white;
+    }
+    
+    .high-contrast h1,
+    .high-contrast h2,
+    .high-contrast h3,
+    .high-contrast p,
+    .high-contrast span,
+    .high-contrast label,
+    .high-contrast li,
+    .high-contrast button:not(.bg-amber-600), /* Exclui botões primários que têm cor própria */
+    .high-contrast input,
+    .high-contrast textarea,
+    .high-contrast select,
+    .high-contrast div {
+        @apply text-white;
+    }
+
+    .high-contrast .text-slate-300,
+    .high-contrast .text-slate-400,
+    .high-contrast .text-slate-500,
+    .high-contrast .text-zinc-500,
+    .high-contrast .text-zinc-600 {
+        @apply text-white/90;
+    }
+
+    .high-contrast .bg-zinc-700,
+    .high-contrast .bg-zinc-800,
+    .high-contrast .bg-zinc-900,
+    .high-contrast .bg-zinc-900\/50,
+    .high-contrast .bg-zinc-900\/80,
+    .high-contrast .bg-zinc-900\/70,
+    .high-contrast .bg-zinc-900\/90 {
+        @apply bg-black border border-white/50;
+    }
+
+    .high-contrast .border-zinc-700,
+    .high-contrast .border-zinc-800,
+    .high-contrast .border-zinc-800\/50 {
+        @apply border-white/80;
+    }
+
+    .high-contrast .text-amber-300,
+    .high-contrast .text-amber-400,
+    .high-contrast .text-amber-500 {
+        @apply text-yellow-300;
+    }
+    
+    .high-contrast .bg-amber-600 {
+        @apply bg-yellow-400 text-black border-yellow-200;
+    }
+
+    .high-contrast .hover\:bg-amber-500:hover {
+        @apply bg-yellow-300 text-black;
+    }
+    
+    .high-contrast .focus\:ring-amber-500:focus {
+        @apply ring-yellow-400;
+    }
+
+    .high-contrast .shadow-lg, .high-contrast .shadow-2xl {
+        box-shadow: none;
+    }
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0) rotate(-1deg); }
+    20%, 80% { transform: translate3d(2px, 0, 0) rotate(2deg); }
+    30%, 50%, 70% { transform: translate3d(-3px, 0, 0) rotate(-3deg); }
+    40%, 60% { transform: translate3d(3px, 0, 0) rotate(3deg); }
+}
+.animate-shake {
+    animation: shake 0.8s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes fade-in-sm {
+    from { opacity: 0; transform: scale(0.98) translateY(-5px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-fade-in-sm {
+    animation: fade-in-sm 0.15s ease-out forwards;
+}
+
+@keyframes hit-left {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(-20px) rotate(-3deg); }
+  100% { transform: translateX(0); }
+}
+.animate-hit-left {
+  animation: hit-left 0.7s ease-in-out forwards;
+}
+
+@keyframes hit-right {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(20px) rotate(3deg); }
+  100% { transform: translateX(0); }
+}
+.animate-hit-right {
+  animation: hit-right 0.7s ease-in-out forwards;
+}
+
+@keyframes crack-left {
+  from { transform: translate(0, 0) rotate(0deg); }
+  to { transform: translate(-15px, -8px) rotate(-4deg); }
+}
+.animate-crack-left {
+    animation: crack-left 0.4s 0.7s ease-out forwards;
+}
+
+@keyframes crack-right {
+  from { transform: translate(0, 0) rotate(0deg); }
+  to { transform: translate(15px, 8px) rotate(4deg); }
+}
+.animate-crack-right {
+    animation: crack-right 0.4s 0.7s ease-out forwards;
+}
+
+
+/* Custom Scrollbar Styles - High Specificity Fix */
+*::-webkit-scrollbar,
+textarea::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+*::-webkit-scrollbar-track,
+textarea::-webkit-scrollbar-track {
+    @apply bg-zinc-900/50;
+}
+
+*::-webkit-scrollbar-thumb,
+textarea::-webkit-scrollbar-thumb {
+    @apply bg-zinc-700 border-2 border-solid border-transparent rounded-full bg-clip-content;
+}
+
+*::-webkit-scrollbar-thumb:hover,
+textarea::-webkit-scrollbar-thumb:hover {
+    @apply bg-zinc-600;
+}
+
+/* This targets the corner square where the resizer handle sits */
+*::-webkit-scrollbar-corner,
+textarea::-webkit-scrollbar-corner {
+    background-color: transparent;
+}
+
+
+.high-contrast *::-webkit-scrollbar-track,
+.high-contrast textarea::-webkit-scrollbar-track {
+    @apply bg-black;
+}
+
+.high-contrast *::-webkit-scrollbar-thumb,
+.high-contrast textarea::-webkit-scrollbar-thumb {
+    @apply bg-white/80 border-2 border-solid border-transparent rounded-full bg-clip-content;
+}
+
+.high-contrast *::-webkit-scrollbar-thumb:hover,
+.high-contrast textarea::-webkit-scrollbar-thumb:hover {
+    @apply bg-white;
+}
+
+
+/* Custom Resizer for Textareas that are resizable */
+textarea.resize::-webkit-resizer,
+textarea.resize-y::-webkit-resizer {
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 10 10' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='8' cy='2' r='1' fill='rgb(113, 113, 122)'/%3E%3Ccircle cx='5' cy='5' r='1' fill='rgb(113, 113, 122)'/%3E%3Ccircle cx='8' cy='5' r='1' fill='rgb(113, 113, 122)'/%3E%3Ccircle cx='2' cy='8' r='1' fill='rgb(113, 113, 122)'/%3E%3Ccircle cx='5' cy='8' r='1' fill='rgb(113, 113, 122)'/%3E%3Ccircle cx='8' cy='8' r='1' fill='rgb(113, 113, 122)'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-color: transparent; /* Ensures no inherited background color */
+    border-width: 0; /* Prevents any default border */
+    outline: none; /* Prevents any default outline */
+}
+
+.high-contrast textarea.resize::-webkit-resizer,
+.high-contrast textarea.resize-y::-webkit-resizer {
+     background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 10 10' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='8' cy='2' r='1' fill='white'/%3E%3Ccircle cx='5' cy='5' r='1' fill='white'/%3E%3Ccircle cx='8' cy='5' r='1' fill='white'/%3E%3Ccircle cx='2' cy='8' r='1' fill='white'/%3E%3Ccircle cx='5' cy='8' r='1' fill='white'/%3E%3Ccircle cx='8' cy='8' r='1' fill='white'/%3E%3C/svg%3E");
+     background-color: transparent;
+}
