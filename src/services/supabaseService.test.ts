@@ -123,8 +123,21 @@ const sortStateArrays = (state: GameState): GameState => {
 };
 
 
-const REQUIRED_ENV_VARS = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'TEST_SUPABASE_EMAIL', 'TEST_SUPABASE_PASSWORD'] as const;
-const missingEnvVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+const envMatrix = {
+    SUPABASE_URL: process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY,
+    TEST_SUPABASE_EMAIL: process.env.TEST_SUPABASE_EMAIL,
+    TEST_SUPABASE_PASSWORD: process.env.TEST_SUPABASE_PASSWORD,
+} as const;
+
+const missingEnvVars = Object.entries(envMatrix)
+    .filter(([, value]) => !value)
+    .map(([key]) => {
+        if (key === 'SUPABASE_URL') return 'SUPABASE_URL/VITE_SUPABASE_URL';
+        if (key === 'SUPABASE_ANON_KEY') return 'SUPABASE_ANON_KEY/VITE_SUPABASE_ANON_KEY';
+        return key;
+    });
+
 const canRunSupabaseTests = missingEnvVars.length === 0;
 const describeIntegration = canRunSupabaseTests ? describe : describe.skip;
 
@@ -137,8 +150,8 @@ describeIntegration('supabaseService integration tests', () => {
     let shouldSignOut = false;
 
     beforeAll(async () => {
-        const email = process.env.TEST_SUPABASE_EMAIL!;
-        const password = process.env.TEST_SUPABASE_PASSWORD!;
+        const email = envMatrix.TEST_SUPABASE_EMAIL!;
+        const password = envMatrix.TEST_SUPABASE_PASSWORD!;
 
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) {

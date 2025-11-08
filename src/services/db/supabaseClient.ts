@@ -3,15 +3,26 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-/** URL do projeto Supabase. */
-export const SUPABASE_URL = "https://xadadnpicpxdjmofkamw.supabase.co";
-/** Chave anônima pública (anon key) do Supabase, segura para ser exposta no frontend. */
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhZGFkbnBpY3B4ZGptb2ZrYW13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyMTI5MzQsImV4cCI6MjA3NTc4ODkzNH0.jK5ZEOwtKaoFEvqBhtyIUkO7daSgyau_VVdyM8m5fY4";
+const getNodeEnvVar = (key: 'SUPABASE_URL' | 'SUPABASE_ANON_KEY'): string | undefined => {
+    if (typeof process !== 'undefined' && process.env) {
+        return process.env[key];
+    }
+    return undefined;
+};
 
-// Validação para garantir que as credenciais do Supabase estão presentes.
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Supabase URL and Anon Key must be provided.');
+/**
+ * Prefere as variáveis públicas usadas pelo Vite (expostas para o frontend),
+ * mas aceita um fallback para `process.env` para facilitar testes/integrations.
+ */
+const resolvedSupabaseUrl = import.meta.env?.VITE_SUPABASE_URL ?? getNodeEnvVar('SUPABASE_URL');
+const resolvedSupabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY ?? getNodeEnvVar('SUPABASE_ANON_KEY');
+
+if (!resolvedSupabaseUrl || !resolvedSupabaseAnonKey) {
+    throw new Error('Supabase URL and Anon Key must be provided via environment variables.');
 }
 
+/** URL do projeto Supabase. */
+export const SUPABASE_URL = resolvedSupabaseUrl;
+
 /** Instância do cliente Supabase, exportada para ser usada em toda a aplicação. */
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(resolvedSupabaseUrl, resolvedSupabaseAnonKey);
