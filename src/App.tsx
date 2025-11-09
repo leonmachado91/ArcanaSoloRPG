@@ -9,15 +9,13 @@ import CreateCampaignScreen from './features/campaign-creation/CreateCampaignScr
 import CreateCharacterScreen from './features/character-creation/CreateCharacterScreen';
 import GameRoomScreen from './features/game-room/GameRoomScreen';
 import SavedGamesScreen from './features/saved-games/SavedGamesScreen';
-import ToastContainer from './components/ui/ToastContainer';
 import CampaignLoadingScreen from './features/campaign-creation/CampaignLoadingScreen';
-import GlobalOverlays from './components/ui/GlobalOverlays';
 import WelcomeScreen from './features/welcome/WelcomeScreen';
 import Spinner from './components/ui/Spinner';
 import { useAuthStore } from './store/authStore';
-import { useSettingsStore } from './store/settingsStore';
 import { useCatalogStore } from './store/catalogStore';
 import { useNavigationStore } from './store/navigationStore';
+import AppShell from './components/layout/AppShell';
 
 /**
  * AppRouter
@@ -87,41 +85,10 @@ const App: React.FC = () => {
         useCatalogStore.getState().fetchCatalogs();
     }, []);
 
-    // Subscreve às mudanças do `settingsStore` para aplicar efeitos colaterais no DOM.
-    useEffect(() => {
-        const unsubscribe = useSettingsStore.subscribe(
-            (settings) => {
-                const root = document.documentElement;
-                
-                root.classList.remove('text-sm', 'text-base', 'text-lg');
-                if (settings.fontSize === 'small') root.classList.add('text-sm');
-                else if (settings.fontSize === 'large') root.classList.add('text-lg');
-                else root.classList.add('text-base');
-
-                if (settings.highContrast) {
-                    root.classList.add('high-contrast');
-                } else {
-                    root.classList.remove('high-contrast');
-                }
-            }
-        );
-        // Aplica o estado inicial na primeira renderização.
-        const initialSettings = useSettingsStore.getState();
-        const root = document.documentElement;
-        root.classList.add(initialSettings.fontSize === 'small' ? 'text-sm' : initialSettings.fontSize === 'large' ? 'text-lg' : 'text-base');
-        if (initialSettings.highContrast) root.classList.add('high-contrast');
-        
-        return unsubscribe;
-    }, []);
-
-
     return (
-        <div className="min-h-screen">
+        <AppShell>
             <AppContent />
-            {/* Componentes de sobreposição global que precisam estar fora do fluxo de roteamento */}
-            <ToastContainer />
-            <GlobalOverlays />
-        </div>
+        </AppShell>
     );
 };
 

@@ -3,93 +3,75 @@
 @tailwind utilities;
 
 @layer base {
-  html.text-sm { font-size: 14px; }
-  html.text-base { font-size: 16px; }
-  html.text-lg { font-size: 18px; }
-
-  body {
-    background-color: #080808; /* Cor do Fundo */
-    color: #f5f0e1; /* Cor do Texto */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale; /* Equivalente a antialiased */
-    font-family: 'Inter', sans-serif;
+  :root {
+    --arcana-ink-950: #030303;
+    --arcana-ink-900: #080808;
+    --arcana-ink-800: #0f1116;
+    --arcana-ink-700: #171b24;
+    --arcana-parchment-50: #fdfbf4;
+    --arcana-parchment-100: #f5f0e1;
+    --arcana-parchment-200: #e6dcc0;
+    --arcana-ember-300: #ffd08a;
+    --arcana-ember-400: #f8b153;
+    --arcana-ember-500: #ea8a1a;
+    --arcana-aura-300: #93bcff;
+    --arcana-aura-400: #6a9bff;
+    --arcana-aura-500: #4f7ae6;
+    --arcana-verdant-400: #5fc59a;
+    --arcana-rose-400: #f38bb5;
+    --arcana-shadow-soft: 0 25px 60px rgba(0, 0, 0, 0.45);
+    --arcana-shadow-strong: 0 45px 120px rgba(0, 0, 0, 0.65);
+    --arcana-border-muted: rgba(255, 255, 255, 0.08);
+    --arcana-border-strong: rgba(255, 255, 255, 0.16);
+    --arcana-grid-color: rgba(255, 255, 255, 0.04);
+    --arcana-font-display: 'Cinzel', serif;
+    --arcana-font-sans: 'Inter', sans-serif;
+    --arcana-font-serif: 'Merriweather', serif;
   }
 
-  h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: 'Cinzel', serif;
+  html { font-size: 13px; }
+
+  body {
+    background-color: var(--arcana-ink-950);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(234, 138, 26, 0.12), transparent 55%),
+      radial-gradient(circle at 80% 0%, rgba(74, 122, 230, 0.18), transparent 45%);
+    color: var(--arcana-parchment-100);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: var(--arcana-font-sans);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6,
+  .font-display {
+    font-family: var(--arcana-font-display);
+    letter-spacing: 0.04em;
   }
 
   .font-body-serif {
-    font-family: 'Merriweather', serif;
+    font-family: var(--arcana-font-serif);
   }
-}
 
-/* High Contrast Accessibility Styles */
-@layer utilities {
-    .high-contrast {
-        @apply bg-black text-white;
-    }
-    
-    .high-contrast h1,
-    .high-contrast h2,
-    .high-contrast h3,
-    .high-contrast p,
-    .high-contrast span,
-    .high-contrast label,
-    .high-contrast li,
-    .high-contrast button:not(.bg-amber-600), /* Exclui botões primários que têm cor própria */
-    .high-contrast input,
-    .high-contrast textarea,
-    .high-contrast select,
-    .high-contrast div {
-        @apply text-white;
-    }
+  .app-shell {
+    position: relative;
+    min-height: 100vh;
+    color: var(--arcana-parchment-100);
+  }
 
-    .high-contrast .text-slate-300,
-    .high-contrast .text-slate-400,
-    .high-contrast .text-slate-500,
-    .high-contrast .text-zinc-500,
-    .high-contrast .text-zinc-600 {
-        @apply text-white/90;
-    }
-
-    .high-contrast .bg-zinc-700,
-    .high-contrast .bg-zinc-800,
-    .high-contrast .bg-zinc-900,
-    .high-contrast .bg-zinc-900\/50,
-    .high-contrast .bg-zinc-900\/80,
-    .high-contrast .bg-zinc-900\/70,
-    .high-contrast .bg-zinc-900\/90 {
-        @apply bg-black border border-white/50;
-    }
-
-    .high-contrast .border-zinc-700,
-    .high-contrast .border-zinc-800,
-    .high-contrast .border-zinc-800\/50 {
-        @apply border-white/80;
-    }
-
-    .high-contrast .text-amber-300,
-    .high-contrast .text-amber-400,
-    .high-contrast .text-amber-500 {
-        @apply text-yellow-300;
-    }
-    
-    .high-contrast .bg-amber-600 {
-        @apply bg-yellow-400 text-black border-yellow-200;
-    }
-
-    .high-contrast .hover\:bg-amber-500:hover {
-        @apply bg-yellow-300 text-black;
-    }
-    
-    .high-contrast .focus\:ring-amber-500:focus {
-        @apply ring-yellow-400;
-    }
-
-    .high-contrast .shadow-lg, .high-contrast .shadow-2xl {
-        box-shadow: none;
-    }
+  .app-shell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(90deg, var(--arcana-grid-color) 1px, transparent 0),
+      linear-gradient(180deg, var(--arcana-grid-color) 1px, transparent 0);
+    background-size: 220px 220px;
+    opacity: 0.35;
+    mix-blend-mode: screen;
+    z-index: 0;
+  }
 }
 
 @keyframes shake {
@@ -174,22 +156,6 @@ textarea::-webkit-scrollbar-corner {
 }
 
 
-.high-contrast *::-webkit-scrollbar-track,
-.high-contrast textarea::-webkit-scrollbar-track {
-    @apply bg-black;
-}
-
-.high-contrast *::-webkit-scrollbar-thumb,
-.high-contrast textarea::-webkit-scrollbar-thumb {
-    @apply bg-white/80 border-2 border-solid border-transparent rounded-full bg-clip-content;
-}
-
-.high-contrast *::-webkit-scrollbar-thumb:hover,
-.high-contrast textarea::-webkit-scrollbar-thumb:hover {
-    @apply bg-white;
-}
-
-
 /* Custom Resizer for Textareas that are resizable */
 textarea.resize::-webkit-resizer,
 textarea.resize-y::-webkit-resizer {
@@ -201,8 +167,3 @@ textarea.resize-y::-webkit-resizer {
     outline: none; /* Prevents any default outline */
 }
 
-.high-contrast textarea.resize::-webkit-resizer,
-.high-contrast textarea.resize-y::-webkit-resizer {
-     background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 10 10' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='8' cy='2' r='1' fill='white'/%3E%3Ccircle cx='5' cy='5' r='1' fill='white'/%3E%3Ccircle cx='8' cy='5' r='1' fill='white'/%3E%3Ccircle cx='2' cy='8' r='1' fill='white'/%3E%3Ccircle cx='5' cy='8' r='1' fill='white'/%3E%3Ccircle cx='8' cy='8' r='1' fill='white'/%3E%3C/svg%3E");
-     background-color: transparent;
-}

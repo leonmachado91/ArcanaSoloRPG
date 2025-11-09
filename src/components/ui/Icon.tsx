@@ -7,7 +7,7 @@
 import React from 'react';
 
 // Define todos os nomes de ícones permitidos para garantir a segurança de tipos.
-type IconName = 'dice' | 'plus' | 'back' | 'next' | 'fire' | 'water' | 'air' | 'earth' | 'settings' | 'save' | 'trash' | 'upload' | 'download' | 'star' | 'star-solid' | 'close' | 'd20' | 'list-alt' | 'exit' | 'image' | 'audio' | 'code' | 'copy' | 'check' | 'generate-ai' | 'companion' | 'player' | 'sword';
+export type IconName = 'dice' | 'plus' | 'back' | 'next' | 'fire' | 'water' | 'air' | 'earth' | 'settings' | 'save' | 'trash' | 'upload' | 'download' | 'star' | 'star-solid' | 'close' | 'd20' | 'list-alt' | 'exit' | 'image' | 'audio' | 'code' | 'copy' | 'check' | 'generate-ai' | 'companion' | 'player' | 'sword';
 
 interface IconProps {
     /** O nome do ícone a ser renderizado. */

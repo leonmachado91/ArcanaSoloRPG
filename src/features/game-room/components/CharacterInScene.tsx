@@ -15,7 +15,7 @@ const CharacterInScene: React.FC<{ character: Character; onClick: () => void }> 
     return (
         <div 
             onClick={onClick} 
-            className="flex items-start gap-3 p-3 bg-zinc-900/50 rounded-lg cursor-pointer hover:bg-zinc-800 transition-all duration-300 ring-2 ring-transparent"
+            className="flex items-start gap-3 p-3 bg-zinc-900/50 rounded-lg cursor-pointer hover:bg-zinc-800 transition-all duration-300 ring-2 ring-transparent w-full overflow-hidden"
         >
             <div className='w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center flex-shrink-0'>
                 {character.imageUrl ? (

@@ -3,7 +3,7 @@
 // É um formulário de múltiplos passos que coleta os parâmetros básicos do mundo
 // (título, gênero, etc.) e as "declarações" que o definirão.
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useGameStore } from '@/store/useGameStore';
 import Icon from '../../components/ui/Icon';
 import Button from '../../components/ui/Button';
@@ -16,6 +16,7 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { useErrorStore } from '@/store/errorStore';
 import * as draftGeneratorService from '@/services/ai/draftGeneratorService';
 import { formatErrorForDisplay } from '@/types/game';
+import { useAppChrome } from '@/components/layout/AppChromeContext';
 
 /**
  * Componente `CreateCampaignScreen`
@@ -23,6 +24,7 @@ import { formatErrorForDisplay } from '@/types/game';
  */
 const CreateCampaignScreen: React.FC = () => {
     const { navigate, goBack } = useNavigationStore();
+    const { registerBackAction, registerPrimaryAction } = useAppChrome();
     const dispatch = useGameStore(state => state.dispatch);
     const campaign = useGameStore(state => state.campaign);
     const playerCharacter = useGameStore(state => state.playerCharacter);
@@ -70,14 +72,49 @@ const CreateCampaignScreen: React.FC = () => {
 
     const totalSteps = 2;
 
+    const backAction = useMemo(() => ({
+        icon: 'back' as const,
+        ariaLabel: step > 1 ? 'Voltar para o passo anterior' : 'Voltar para a tela anterior',
+        onAction: () => {
+            if (step > 1) {
+                setStep(prev => Math.max(1, prev - 1));
+            } else {
+                goBack();
+            }
+        },
+        variant: 'ghost' as const,
+    }), [step, goBack]);
+
+    const primaryAction = useMemo(() => ({
+        icon: 'next' as const,
+        ariaLabel: step < totalSteps ? 'Avançar para o próximo passo' : 'Concluir e criar personagem',
+        onAction: () => {
+            if (step < totalSteps) {
+                setStep(prev => Math.min(totalSteps, prev + 1));
+            } else {
+                navigate('create-character');
+            }
+        },
+        variant: 'primary' as const,
+    }), [step, totalSteps, navigate]);
+
+    useEffect(() => {
+        registerBackAction(backAction);
+    }, [backAction, registerBackAction]);
+
+    useEffect(() => {
+        registerPrimaryAction(primaryAction);
+    }, [primaryAction, registerPrimaryAction]);
+
+    useEffect(() => {
+        return () => {
+            registerBackAction(null);
+            registerPrimaryAction(null);
+        };
+    }, [registerBackAction, registerPrimaryAction]);
+
     return (
         <div className="min-h-screen flex flex-col p-4 sm:p-8">
-            <header className="flex-shrink-0">
-                <Button variant="ghost" onClick={() => (step > 1 ? setStep(step - 1) : goBack())} className="p-2 -ml-2">
-                    <Icon name="back" className="w-7 h-7" />
-                </Button>
-            </header>
-
             <main className="flex-grow flex flex-col items-center justify-center">
                 <div className="w-full max-w-2xl pb-24">
                     <header className="text-center mb-8">
@@ -141,15 +178,6 @@ const CreateCampaignScreen: React.FC = () => {
                     </div>
                 </div>
             </main>
-            
-            {/* Botão flutuante para avançar para o próximo passo ou para a criação de personagem. */}
-            <button
-                onClick={() => (step < totalSteps ? setStep(step + 1) : navigate('create-character'))}
-                className="fixed bottom-8 right-8 z-20 w-16 h-16 bg-amber-600 text-white rounded-full shadow-2xl flex items-center justify-center transform transition-all duration-300 ease-in-out hover:bg-amber-500 hover:scale-110 active:scale-100"
-                aria-label={step < totalSteps ? 'Próximo' : 'Concluir e Criar Personagem'}
-            >
-                <Icon name="next" className="w-8 h-8" />
-            </button>
         </div>
     );
 };

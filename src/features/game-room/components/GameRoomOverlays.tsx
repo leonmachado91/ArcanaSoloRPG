@@ -2,14 +2,13 @@
 // [Refatoração] Este componente foi extraído do GameRoomScreen para encapsular
 // a lógica de renderização de todos os overlays (drawers e modais).
 
-import React from 'react';
+import React, { useState } from 'react';
 import Drawer from '../../../components/ui/Drawer';
-import Modal from '../../../components/ui/Modal';
 import CharacterSheet from '@/features/character-sheet/CharacterSheet';
-import SettingsDrawer from '../../../components/settings/SettingsDrawer';
-import DevLogDrawer from '@/features/dev-log/DevLogDrawer';
 import { Character } from '../../../types/character';
 import { Campaign } from '../../../types/campaign';
+import Button from '@/components/ui/Button';
+import CharacterInScene from './CharacterInScene';
 
 interface GameRoomOverlaysProps {
     isMenuOpen: boolean;
@@ -21,26 +20,36 @@ interface GameRoomOverlaysProps {
     handleGenerateCharacterImage: (character: Character) => void;
     handleUploadCharacterImage: (character: Character, file: File) => void;
     generatingImageFor: string | null;
-
-    isExitModalOpen: boolean;
-    setIsExitModalOpen: (isOpen: boolean) => void;
-    handleExit: () => void;
-
-    isSettingsOpen: boolean;
-    setIsSettingsOpen: (isOpen: boolean) => void;
-    
-    isDevLogOpen: boolean;
-    setIsDevLogOpen: (isOpen: boolean) => void;
-    onReplayAction: (action: string, isOff?: boolean) => void;
+    playerCharacter: Character;
+    openCharacterSheet: (character: Character) => void;
+    npcsInScene: Character[];
 }
 
 const GameRoomOverlays: React.FC<GameRoomOverlaysProps> = ({
-    isMenuOpen, setMenuOpen, campaign,
-    selectedCharacter, closeCharacterSheet, handleGenerateCharacterImage, handleUploadCharacterImage, generatingImageFor,
-    isExitModalOpen, setIsExitModalOpen, handleExit,
-    isSettingsOpen, setIsSettingsOpen,
-    isDevLogOpen, setIsDevLogOpen, onReplayAction
+    isMenuOpen,
+    setMenuOpen,
+    campaign,
+    selectedCharacter,
+    closeCharacterSheet,
+    handleGenerateCharacterImage,
+    handleUploadCharacterImage,
+    generatingImageFor,
+    playerCharacter,
+    openCharacterSheet,
+    npcsInScene,
 }) => {
+    const [isNpcDrawerOpen, setIsNpcDrawerOpen] = useState(false);
+
+    const handleOpenPlayerSheet = () => {
+        openCharacterSheet(playerCharacter);
+        setMenuOpen(false);
+    };
+
+    const handleOpenNpcDrawer = () => {
+        setIsNpcDrawerOpen(true);
+        setMenuOpen(false);
+    };
+
     return (
         <>
             {/* Drawers e Modais: Renderizados no nível superior para sobrepor toda a tela. */}
@@ -57,7 +66,18 @@ const GameRoomOverlays: React.FC<GameRoomOverlaysProps> = ({
                              <ul className="list-disc list-inside space-y-1 pl-2">
                                  {campaign.declarations.map((dec, i) => <li key={i}>{dec}</li>)}
                              </ul>
-                         </div>
+                        </div>
+                    </div>
+                    <div className="md:hidden border-t border-zinc-800 pt-5">
+                        <h4 className="text-white font-display text-lg mb-3">Acessos rápidos</h4>
+                        <div className="space-y-3">
+                            <Button className="w-full" onClick={handleOpenPlayerSheet}>
+                                Ver ficha completa
+                            </Button>
+                            <Button variant="secondary" className="w-full" onClick={handleOpenNpcDrawer}>
+                                Personagens em cena
+                            </Button>
+                        </div>
                     </div>
                  </div>
             </Drawer>
@@ -71,21 +91,33 @@ const GameRoomOverlays: React.FC<GameRoomOverlaysProps> = ({
                     isGeneratingImage={generatingImageFor === selectedCharacter.id}
                 />}
             </Drawer>
-            
-            <Modal
-                isOpen={isExitModalOpen}
-                onClose={() => setIsExitModalOpen(false)}
-                title="Sair da Campanha"
-                buttons={[
-                    { label: 'Ficar', onClick: () => setIsExitModalOpen(false), variant: 'secondary' },
-                    { label: 'Sair', onClick: handleExit, variant: 'primary', className: 'bg-red-600 hover:bg-red-500 border-red-800 hover:border-red-700' }
-                ]}
-            >
-                <p className="font-body-serif">Deseja retornar ao menu principal? Seu progresso é salvo automaticamente na nuvem.</p>
-            </Modal>
 
-            <SettingsDrawer isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-            <DevLogDrawer isOpen={isDevLogOpen} onClose={() => setIsDevLogOpen(false)} onReplayAction={onReplayAction} />
+            <Drawer
+                isOpen={isNpcDrawerOpen}
+                onClose={() => setIsNpcDrawerOpen(false)}
+                title="Personagens em Cena"
+            >
+                <div className="space-y-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-1">
+                    <CharacterInScene
+                        character={playerCharacter}
+                        onClick={() => openCharacterSheet(playerCharacter)}
+                    />
+                    <hr className="border-zinc-800" />
+                    {npcsInScene.length === 0 ? (
+                        <p className="text-slate-400 text-sm">
+                            Nenhum NPC está marcado como presente nesta cena.
+                        </p>
+                    ) : (
+                        npcsInScene.map(character => (
+                            <CharacterInScene
+                                key={character.id}
+                                character={character}
+                                onClick={() => openCharacterSheet(character)}
+                            />
+                        ))
+                    )}
+                </div>
+            </Drawer>
         </>
     );
 };

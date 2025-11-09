@@ -90,7 +90,7 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
 
 
     return (
-        <div ref={chatContainerRef} className="flex-grow p-4 overflow-y-auto">
+        <div ref={chatContainerRef} className="flex-grow min-h-0 p-4 overflow-y-auto">
             {!isGameStarted ? (
                 <InitialObjectiveSetter
                     playerCharacter={playerCharacter}

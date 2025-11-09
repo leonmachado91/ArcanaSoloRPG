@@ -13,10 +13,12 @@ import Spinner from '../../components/ui/Spinner';
 import * as campaignService from '@/services/db/campaign.service';
 import { formatErrorForDisplay } from '../../types/game';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useAppChrome } from '@/components/layout/AppChromeContext';
 import { useErrorStore } from '@/store/errorStore';
 
 const SavedGamesScreen: React.FC = () => {
     const { navigate, goBack } = useNavigationStore();
+    const { registerBackAction } = useAppChrome();
     const dispatch = useGameStore(state => state.dispatch);
     const { showError } = useErrorStore();
     const { username } = useAuthStore();
@@ -48,6 +50,16 @@ const SavedGamesScreen: React.FC = () => {
     useEffect(() => {
         refreshCampaigns();
     }, [refreshCampaigns]);
+
+    useEffect(() => {
+        registerBackAction({
+            icon: 'back',
+            ariaLabel: 'Voltar para o menu anterior',
+            onAction: goBack,
+            variant: 'ghost',
+        });
+        return () => registerBackAction(null);
+    }, [goBack, registerBackAction]);
 
     /**
      * Carrega uma campanha selecionada.
@@ -129,13 +141,8 @@ const SavedGamesScreen: React.FC = () => {
 
     return (
         <div className="min-h-screen p-4 sm:p-8">
-            <header className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" onClick={goBack} className="p-2 -ml-2">
-                        <Icon name="back" className="w-7 h-7" />
-                    </Button>
-                    <h1 className="text-4xl font-display text-white">Campanhas de {username}</h1>
-                </div>
+            <header className="flex items-center justify-center mb-8">
+                <h1 className="text-4xl font-display text-white text-center">Campanhas de {username}</h1>
             </header>
             
             {loading ? (

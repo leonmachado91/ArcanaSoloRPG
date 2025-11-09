@@ -22,6 +22,7 @@ interface DrawerProps {
 const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, children, title, size = 'default' }) => {
     // Classes condicionais para controlar a animação de entrada/saída.
     const transformClass = isOpen ? 'translate-x-0' : 'translate-x-full';
+    const shadowClass = isOpen ? 'shadow-2xl' : 'shadow-none';
     
     let sizeClass = 'max-w-md';
     if (size === 'large') {
@@ -44,7 +45,7 @@ const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, children, title, size 
             
             {/* Painel do Drawer: O container que desliza. */}
             <div
-                className={`fixed top-0 right-0 h-full w-full ${sizeClass} bg-zinc-900/90 backdrop-blur-sm shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${transformClass}`}
+                className={`fixed top-0 right-0 h-full w-full ${sizeClass} bg-zinc-900/90 backdrop-blur-sm z-50 transform transition-transform duration-300 ease-in-out ${transformClass} ${shadowClass}`}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="drawer-title"

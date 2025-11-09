@@ -15,7 +15,7 @@ const NpcsInScenePanel: React.FC<NpcsInScenePanelProps> = ({
     onCharacterClick,
 }) => {
     return (
-        <aside className="hidden lg:block w-72 xl:w-80 flex-shrink-0 border-l border-zinc-800/50 bg-[#181818] p-4 space-y-3 overflow-y-auto">
+        <aside className="hidden lg:flex w-72 xl:w-80 flex-shrink-0 flex-col border-l border-zinc-800/50 bg-[#181818] p-4 space-y-3 overflow-y-auto overflow-x-hidden min-h-0">
             <h2 className='font-display text-xl text-center pb-2 border-b border-zinc-700'>Personagens em Cena</h2>
 
             <CharacterInScene

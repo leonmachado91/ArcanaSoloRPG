@@ -19,7 +19,7 @@ const PlayerSummaryPanel: React.FC<PlayerSummaryPanelProps> = ({
     generatingImageFor,
 }) => {
     return (
-        <aside className="hidden md:block w-80 lg:w-96 flex-shrink-0 border-r border-zinc-800/50 bg-[#181818]">
+        <aside className="hidden md:flex w-80 lg:w-96 flex-shrink-0 flex-col border-r border-zinc-800/50 bg-[#181818] overflow-y-auto overflow-x-hidden min-h-0">
             <CharacterSheet
                 character={playerCharacter}
                 variant="summary"

@@ -28,6 +28,13 @@ View your app in AI Studio: https://ai.studio/apps/drive/1gTYhCL-L1useqniVqfBNdj
 - `npm run test:e2e`: roda os cenários E2E em Playwright, separados do Vitest.
 - Para habilitar o teste de integração com Supabase, configure `SUPABASE_URL`/`VITE_SUPABASE_URL`, `SUPABASE_ANON_KEY`/`VITE_SUPABASE_ANON_KEY`, `TEST_SUPABASE_EMAIL` e `TEST_SUPABASE_PASSWORD` e garanta que o usuário informado esteja apto a autenticar.
 
+## Design tokens Arcana e App Shell
+
+- **Paleta:** use `bg-arcana-ink-*` para fundos escuros (700–950), `text-arcana-parchment-*` para textos claros e combine com `arcana-ember`, `arcana-aura`, `arcana-verdant` e `arcana-rose` para feedbacks (primário, info, sucesso e alerta visual). Os mesmos valores estão disponíveis como variáveis CSS (`--arcana-ink-950`, `--arcana-parchment-100`, etc.) em `src/index.css`.
+- **Sombras e brilhos:** `shadow-arcana-card` cria a profundidade principal dos painéis, enquanto `shadow-arcana-glow` adiciona o brilho místico. Para estados de foco manual, aplique `shadow-arcana-focus`.
+- **Tipografia:** `font-display` (Cinzel) para títulos, `font-body-serif` (Merriweather) para trechos narrativos e `font-sans` (Inter) como base. Tamanhos semânticos (`text-heading-hero`, `text-heading-xl`, `text-body-lg`, `text-body-sm`) vivem em `tailwind.config.ts`.
+- **App Shell:** `AppShell` (em `src/components/layout/AppShell.tsx`) envolve `AppContent`, `ToastContainer` e `GlobalOverlays`, aplica os gradientes/grades definidos pelos tokens e garante que botões de Settings/DevLog estejam acessíveis em todas as rotas. Qualquer nova tela deve apenas renderizar seu conteúdo dentro da árvore padrão do App para herdar o shell automaticamente.
+
 ## Deploy no Netlify
 
 1. No painel do Netlify, acesse *Site settings → Build & deploy → Environment → Environment variables*.

@@ -1,5 +1,5 @@
 {
-  "name": "arcana-alpha-3.3.6",
+  "name": "ArcanaSoloRPG",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test"
   },
@@ -35,7 +35,7 @@
     "autoprefixer": "^10.4.21",
     "jsdom": "^24.1.1",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.16",
+    "tailwindcss": "^3.4.15",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vite-tsconfig-paths": "^5.1.4",

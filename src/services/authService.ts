@@ -1,73 +1,87 @@
 // services/authService.ts
-// Este serviço gerencia a "autenticação" do usuário, que neste projeto é um sistema
-// simplificado baseado em salvar um nome de usuário no localStorage. Ele também
-// interage com o Supabase para verificar se um nome de usuário já existe.
+// Este serviço centraliza a autenticação simplificada do projeto. O usuário
+// "loga" com um nome de aventureiro e nós garantimos que o Supabase possua
+// uma conta compatível antes de gravar o nome no localStorage.
 
+import type { AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/services/db/supabaseClient';
 import { createAppError, isAppError } from '../types/game';
 
 /** Chave usada para armazenar o nome de usuário no localStorage. */
 const LOCAL_USERNAME_KEY = 'arcana_username';
+const INVALID_LOGIN_SNIPPET = 'invalid login credentials';
+const USER_ALREADY_REGISTERED_SNIPPET = 'user already registered';
+
+const isMatchingAuthError = (error: AuthError | null, snippet: string) =>
+    Boolean(error?.message?.toLowerCase().includes(snippet));
 
 /**
  * Obtém o nome de usuário salvo localmente no localStorage.
- * @returns O nome de usuário, ou `null` se não houver nenhum salvo.
  */
 export const getLocalUsername = (): string | null => localStorage.getItem(LOCAL_USERNAME_KEY);
 
 /**
- * Realiza o "login" do usuário simplesmente salvando seu nome no localStorage.
- * @param username O nome de usuário a ser salvo.
+ * Realiza o "login" local salvando o nome informado.
  */
 export const signInWithUsername = (username: string) => {
     localStorage.setItem(LOCAL_USERNAME_KEY, username);
 };
 
 /**
- * Realiza o "logout" do usuário removendo seu nome do localStorage.
+ * Remove o nome salvo no localStorage.
  */
 export const signOut = () => {
     localStorage.removeItem(LOCAL_USERNAME_KEY);
 };
 
 /**
- * Tenta logar um usuário com um nome de aventureiro. Se a conta não existir,
- * cria uma nova conta com as mesmas credenciais.
- * @param name O nome do aventureiro.
+ * Realiza login ou cadastro determinístico a partir do nome do aventureiro.
+ * Para evitar o erro 422 exibido no console, tentamos logar antes de criar a conta.
  */
 export const loginOrSignUpWithAdventurerName = async (name: string): Promise<void> => {
     const context = 'loginOrSignUp';
     const email = `${name.toLowerCase().replace(/\s/g, '_')}@example.com`;
-    // FIX: A senha agora é gerada a partir do nome em minúsculas para garantir consistência
-    // e evitar erros de "credenciais inválidas" por diferença de maiúsculas/minúsculas.
     const password = `password-${name.toLowerCase()}`;
 
+    const forceLoginOrThrow = async (friendlyMessage: string) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            throw createAppError('SUPABASE_ERROR', friendlyMessage, error, context);
+        }
+    };
+
     try {
-        // 1. Tenta criar a conta primeiro. É a forma mais atômica de verificar e criar.
-        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        // 1. Primeiro tenta logar. Se a conta já existir evitamos o 422 no console.
+        const { error: initialSignInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (!initialSignInError) {
+            console.log(`[${context}] Login bem-sucedido para o aventureiro ${email}.`);
+            return;
+        }
 
+        if (!isMatchingAuthError(initialSignInError, INVALID_LOGIN_SNIPPET)) {
+            throw createAppError('SUPABASE_ERROR', 'Falha ao logar com o aventureiro informado.', initialSignInError, context);
+        }
+
+        // 2. Conta inexistente (ou senha divergente). Tenta criar a conta.
+        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
         if (signUpError) {
-            // 2. Se o erro for "Usuário já registrado", sabemos que ele existe, então fazemos o login.
-            if (signUpError.message.includes('User already registered')) {
-                console.log(`[${context}] User already exists, proceeding to login.`);
-                const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-
-                // Se o login ainda falhar, algo está seriamente errado.
-                if (signInError) {
-                    throw createAppError('SUPABASE_ERROR', 'Falha ao logar com um aventureiro existente.', signInError, context);
-                }
-                // Login bem-sucedido após detectar usuário existente.
+            if (isMatchingAuthError(signUpError, USER_ALREADY_REGISTERED_SNIPPET)) {
+                console.log(`[${context}] Conta detectada durante o cadastro. Repetindo login.`);
+                await forceLoginOrThrow('Falha ao logar com um aventureiro existente.');
                 return;
             }
-            
-            // Se foi qualquer outro erro de cadastro, é um erro real.
+
             throw createAppError('SUPABASE_ERROR', 'Falha ao criar uma nova conta de aventureiro.', signUpError, context);
         }
 
-        // 3. Se `signUpError` for nulo, o cadastro foi bem-sucedido e o Supabase já iniciou a sessão.
-        // Nada mais a fazer.
-    } catch (e) {
-        if (isAppError(e)) throw e;
-        throw createAppError('UNKNOWN_ERROR', 'Um erro inesperado ocorreu durante a autenticação.', e, context);
+        // 3. Em alguns cenários o Supabase não inicia sessão automaticamente.
+        if (!data.session) {
+            await forceLoginOrThrow('Conta criada, mas não foi possível autenticar automaticamente.');
+        }
+
+        console.log(`[${context}] Nova conta criada com sucesso para ${email}.`);
+    } catch (error) {
+        if (isAppError(error)) throw error;
+        throw createAppError('UNKNOWN_ERROR', 'Um erro inesperado ocorreu durante a autenticação.', error, context);
     }
 };

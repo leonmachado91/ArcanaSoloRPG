@@ -6,8 +6,6 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/store/useGameStore';
-import Icon from '../../components/ui/Icon';
-import Button from '../../components/ui/Button';
 import ElementDisplay from '../../components/character/ElementDisplay';
 import { Character } from '../../types/character';
 import { calculateElements } from '../../utils/characterUtils';
@@ -17,6 +15,7 @@ import CharacterBasicInfoStep from './components/CharacterBasicInfoStep';
 import CharacterTraitsStep from './components/CharacterTraitsStep';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useErrorStore } from '@/store/errorStore';
+import { useAppChrome } from '@/components/layout/AppChromeContext';
 
 /**
  * Componente `CreateCharacterScreen`
@@ -24,6 +23,7 @@ import { useErrorStore } from '@/store/errorStore';
  */
 const CreateCharacterScreen: React.FC = () => {
     const { navigate, goBack } = useNavigationStore();
+    const { registerBackAction, registerPrimaryAction } = useAppChrome();
     const dispatch = useGameStore(state => state.dispatch);
     const playerCharacter = useGameStore(state => state.playerCharacter);
     const { showError } = useErrorStore();
@@ -122,13 +122,44 @@ const CreateCharacterScreen: React.FC = () => {
 
     const totalSteps = 2;
 
+    const backAction = useMemo(() => ({
+        icon: 'back' as const,
+        ariaLabel: step > 1 ? 'Voltar para o passo anterior' : 'Voltar para a criação de campanha',
+        onAction: () => {
+            if (step > 1) {
+                setStep(prev => Math.max(1, prev - 1));
+            } else {
+                goBack();
+            }
+        },
+        variant: 'ghost' as const,
+    }), [step, goBack]);
+
+    const primaryAction = useMemo(() => ({
+        icon: 'next' as const,
+        ariaLabel: step < totalSteps ? 'Avançar para o próximo passo' : 'Concluir criação do personagem',
+        onAction: () => {
+            if (step < totalSteps) {
+                setStep(prev => Math.min(totalSteps, prev + 1));
+            } else {
+                handleFinishCreation();
+            }
+        },
+        variant: 'primary' as const,
+    }), [step, totalSteps, handleFinishCreation]);
+
+    useEffect(() => {
+        registerBackAction(backAction);
+        return () => registerBackAction(null);
+    }, [backAction, registerBackAction]);
+
+    useEffect(() => {
+        registerPrimaryAction(primaryAction);
+        return () => registerPrimaryAction(null);
+    }, [primaryAction, registerPrimaryAction]);
+
     return (
         <div className="min-h-screen flex flex-col p-4 sm:p-8">
-            <header className="flex-shrink-0">
-                <Button variant="ghost" onClick={() => (step > 1 ? setStep(step - 1) : goBack())} className="p-2 -ml-2">
-                    <Icon name="back" className="w-7 h-7" />
-                </Button>
-            </header>
 
             <main className="flex-grow flex flex-col items-center justify-center">
                 <div className="w-full max-w-6xl pb-24">
@@ -159,7 +190,6 @@ const CreateCharacterScreen: React.FC = () => {
                                 advantagePoints={advantagePoints}
                                 usedAdvantagePoints={usedAdvantagePoints}
                                 onToggleTrait={toggleTrait}
-                                onGoBack={goBack}
                             />
                         )}
                     </div>
@@ -178,14 +208,6 @@ const CreateCharacterScreen: React.FC = () => {
                 </div>
             )}
 
-
-            <button
-                onClick={() => (step < totalSteps ? setStep(step + 1) : handleFinishCreation())}
-                className="fixed bottom-8 right-8 z-20 w-16 h-16 bg-amber-600 text-white rounded-full shadow-2xl flex items-center justify-center transform transition-all duration-300 ease-in-out hover:bg-amber-500 hover:scale-110 active:scale-100"
-                aria-label={step < totalSteps ? 'Próximo' : 'Concluir'}
-            >
-                 <Icon name="next" className="w-8 h-8" />
-            </button>
         </div>
     );
 };

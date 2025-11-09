@@ -3,7 +3,6 @@ import React from 'react';
 import { Character, GroupedTraits } from '@/types/character';
 import Spinner from '@/components/ui/Spinner';
 import Icon from '@/components/ui/Icon';
-import Button from '@/components/ui/Button';
 import TraitButton from '@/components/character/TraitButton';
 
 interface CharacterTraitsStepProps {
@@ -14,7 +13,6 @@ interface CharacterTraitsStepProps {
     advantagePoints: number;
     usedAdvantagePoints: number;
     onToggleTrait: (traitName: string, type: 'advantages' | 'disadvantages') => void;
-    onGoBack: () => void;
 }
 
 const CharacterTraitsStep: React.FC<CharacterTraitsStepProps> = ({
@@ -25,7 +23,6 @@ const CharacterTraitsStep: React.FC<CharacterTraitsStepProps> = ({
     advantagePoints,
     usedAdvantagePoints,
     onToggleTrait,
-    onGoBack,
 }) => {
     if (isLoading) {
         return (
@@ -41,7 +38,6 @@ const CharacterTraitsStep: React.FC<CharacterTraitsStepProps> = ({
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
                 <Icon name="close" className="w-12 h-12 text-red-500" />
                 <p className="mt-4 text-red-400 max-w-md">Não foi possível carregar os dados de personagem. Verifique o console de erros para mais detalhes.</p>
-                <Button variant="secondary" onClick={onGoBack} className="mt-4">Voltar</Button>
             </div>
         );
     }

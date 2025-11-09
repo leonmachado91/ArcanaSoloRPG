@@ -4,16 +4,12 @@
 // com informações dos personagens. A maior parte de sua lógica de negócio é abstraída
 // para o hook `useGameRoom` para manter o componente focado na renderização.
 
-import React, { useMemo } from 'react';
-import Icon from '../../components/ui/Icon';
-import Button from '../../components/ui/Button';
+import React, { useEffect, useMemo } from 'react';
 import { useGameRoom } from '../../hooks/useGameRoom';
-import SaveStatusIndicator from './components/SaveStatusIndicator';
 import GameRoomOverlays from './components/GameRoomOverlays';
-import PlayerSummaryPanel from './components/PlayerSummaryPanel';
-import NpcsInScenePanel from './components/NpcsInScenePanel';
-import ChatDisplay from './components/ChatDisplay';
-import PlayerInputBar from './components/PlayerInputBar';
+import { useAppChrome } from '@/components/layout/AppChromeContext';
+import GameRoomHeader from './components/GameRoomHeader';
+import GameRoomLayout from './components/GameRoomLayout';
 
 /**
  * Componente `GameRoomScreen`
@@ -27,10 +23,7 @@ const GameRoomScreen: React.FC = () => {
         isInputDisabled, isGameStarted, isSaving, isMasterThinking,
         isMenuOpen, setMenuOpen,
         selectedCharacter, openCharacterSheet, closeCharacterSheet,
-        isExitModalOpen, setIsExitModalOpen,
         isOff, setIsOff,
-        isSettingsOpen, setIsSettingsOpen,
-        isDevLogOpen, setIsDevLogOpen,
         sendPlayerAction, handleRollDice, handleStartGame,
         handleGenerateImage,
         handleGenerateCharacterImage,
@@ -39,6 +32,12 @@ const GameRoomScreen: React.FC = () => {
         handleExit,
         handleDeleteMessage,
     } = useGameRoom();
+    const { setDevLogReplayHandler, registerBackAction } = useAppChrome();
+
+    useEffect(() => {
+        setDevLogReplayHandler(() => sendPlayerAction);
+        return () => setDevLogReplayHandler(null);
+    }, [sendPlayerAction, setDevLogReplayHandler]);
     
     // `useMemo` é usado para calcular valores derivados do estado de forma otimizada.
     // Eles só são recalculados se as dependências (ex: `campaign.scenes`) mudarem.
@@ -61,79 +60,59 @@ const GameRoomScreen: React.FC = () => {
         return npcs.filter(npc => sceneCharacterIds.has(npc.id));
     }, [campaign.scenes, npcs]);
 
+    useEffect(() => {
+        registerBackAction({
+            icon: 'back',
+            ariaLabel: 'Sair da campanha',
+            onAction: handleExit,
+            variant: 'ghost',
+        });
+        return () => registerBackAction(null);
+    }, [handleExit, registerBackAction]);
+
     return (
-        <div className="fixed inset-0 flex flex-col bg-[#121212]">
-            {/* Cabeçalho da Sala de Jogo */}
-            <header className="flex-shrink-0 bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800/50 flex items-center justify-between px-4 py-2 z-10">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-lg font-display text-white uppercase tracking-widest">{campaign.title}</h1>
-                    {currentLocation && (
-                        <div className="flex items-center gap-2 text-sm text-amber-300/80">
-                            <div className="w-px h-4 bg-zinc-700"></div>
-                            <span>{currentLocation.name}</span>
-                        </div>
-                    )}
-                    <SaveStatusIndicator isSaving={isSaving} />
-                </div>
-                {/* Botões de Ação Global da Sala */}
-                <div className="flex items-center gap-1">
-                    <Button variant="ghost" className="p-2 text-slate-400 hover:text-red-400" onClick={() => setIsExitModalOpen(true)} title="Sair para o Menu">
-                        <Icon name="exit" className="w-6 h-6"/>
-                    </Button>
-                    <div className="w-px h-6 bg-zinc-700 mx-1"></div>
-                     <Button variant="ghost" className="p-2" onClick={() => setMenuOpen(true)} title="Painel da Campanha">
-                        <Icon name="list-alt" className="w-6 h-6"/>
-                    </Button>
-                    <Button variant="ghost" className="p-2" onClick={() => setIsSettingsOpen(true)} title="Opções">
-                        <Icon name="settings" className="w-6 h-6"/>
-                    </Button>
-                    <Button variant="ghost" className="p-2" onClick={() => setIsDevLogOpen(true)} title="Log do Desenvolvedor">
-                        <Icon name="code" className="w-6 h-6"/>
-                    </Button>
-                </div>
-            </header>
+        <div className="flex flex-1 flex-col bg-[#121212] min-h-0 h-full overflow-hidden">
+            <GameRoomHeader
+                campaignTitle={campaign.title}
+                currentLocationName={currentLocation?.name}
+                isSaving={isSaving}
+                onOpenCampaignPanel={() => setMenuOpen(true)}
+            />
 
-            <div className="flex-grow flex overflow-hidden">
-                <PlayerSummaryPanel
-                    playerCharacter={playerCharacter}
-                    onViewMore={openCharacterSheet}
-                    onGenerateImage={handleGenerateCharacterImage}
-                    onUploadImage={handleUploadCharacterImage}
-                    generatingImageFor={generatingImageFor}
-                />
+            <GameRoomLayout
+                playerPanel={{
+                    playerCharacter,
+                    generatingImageFor,
+                    onViewMore: openCharacterSheet,
+                    onGenerateImage: handleGenerateCharacterImage,
+                    onUploadImage: handleUploadCharacterImage,
+                }}
+                npcsPanel={{
+                    playerCharacter,
+                    npcsInScene,
+                    onCharacterClick: openCharacterSheet,
+                }}
+                chat={{
+                    isGameStarted,
+                    playerCharacter,
+                    isInputDisabled,
+                    handleStartGame,
+                    chatHistory,
+                    onGenerateImage: handleGenerateImage,
+                    onDeleteMessage: handleDeleteMessage,
+                    onRollDice: handleRollDice,
+                    allCharacters,
+                    isMasterThinking,
+                }}
+                playerInput={{
+                    isGameStarted,
+                    isInputDisabled,
+                    isOff,
+                    setIsOff,
+                    onSendMessage: sendPlayerAction,
+                }}
+            />
 
-                {/* Área Principal: Chat do Jogo */}
-                <main className="flex-grow flex flex-col overflow-hidden">
-                    <ChatDisplay
-                        isGameStarted={isGameStarted}
-                        playerCharacter={playerCharacter}
-                        isInputDisabled={isInputDisabled}
-                        handleStartGame={handleStartGame}
-                        chatHistory={chatHistory}
-                        onGenerateImage={handleGenerateImage}
-                        onDeleteMessage={handleDeleteMessage}
-                        onRollDice={handleRollDice}
-                        allCharacters={allCharacters}
-                        isMasterThinking={isMasterThinking}
-                    />
-
-                    {isGameStarted && (
-                        <PlayerInputBar
-                            isInputDisabled={isInputDisabled}
-                            isOff={isOff}
-                            setIsOff={setIsOff}
-                            onSendMessage={sendPlayerAction}
-                        />
-                    )}
-                </main>
-
-                <NpcsInScenePanel
-                    playerCharacter={playerCharacter}
-                    npcsInScene={npcsInScene}
-                    onCharacterClick={openCharacterSheet}
-                />
-            </div>
-            
             <GameRoomOverlays
                 isMenuOpen={isMenuOpen}
                 setMenuOpen={setMenuOpen}
@@ -143,14 +122,9 @@ const GameRoomScreen: React.FC = () => {
                 handleGenerateCharacterImage={handleGenerateCharacterImage}
                 handleUploadCharacterImage={handleUploadCharacterImage}
                 generatingImageFor={generatingImageFor}
-                isExitModalOpen={isExitModalOpen}
-                setIsExitModalOpen={setIsExitModalOpen}
-                handleExit={handleExit}
-                isSettingsOpen={isSettingsOpen}
-                setIsSettingsOpen={setIsSettingsOpen}
-                isDevLogOpen={isDevLogOpen}
-                setIsDevLogOpen={setIsDevLogOpen}
-                onReplayAction={sendPlayerAction}
+                playerCharacter={playerCharacter}
+                openCharacterSheet={openCharacterSheet}
+                npcsInScene={npcsInScene}
             />
         </div>
     );

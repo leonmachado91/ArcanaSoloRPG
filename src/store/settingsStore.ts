@@ -4,11 +4,7 @@ import { persist } from 'zustand/middleware';
 import { AI_MODEL_CONFIG, AiTask } from '@/data/ai/models';
 import { getConfig } from '@/services/configService';
 
-type FontSize = 'small' | 'normal' | 'large';
-
 interface SettingsState {
-    fontSize: FontSize;
-    highContrast: boolean;
     aiModels: Record<AiTask, string>;
     voice: string;
     isRawModeEnabled: boolean;
@@ -16,8 +12,6 @@ interface SettingsState {
 }
 
 interface SettingsActions {
-    setFontSize: (size: FontSize) => void;
-    setHighContrast: (enabled: boolean) => void;
     setAiModel: (task: AiTask, model: string) => void;
     setVoice: (voiceName: string) => void;
     setIsRawModeEnabled: (enabled: boolean) => void;
@@ -26,8 +20,6 @@ interface SettingsActions {
 const getDefaultSettings = (): Omit<SettingsState, '_hydrated'> => {
     const config = getConfig();
     return {
-        fontSize: 'small',
-        highContrast: false,
         aiModels: config.ai.defaults,
         voice: config.ai.defaultMasterVoice,
         isRawModeEnabled: false,
@@ -39,8 +31,6 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         (set) => ({
             ...getDefaultSettings(),
             _hydrated: false, // Inicia como não hidratado
-            setFontSize: (size) => set({ fontSize: size }),
-            setHighContrast: (enabled) => set({ highContrast: enabled }),
             setAiModel: (task, model) => set((state) => ({
                 aiModels: { ...state.aiModels, [task]: model },
             })),

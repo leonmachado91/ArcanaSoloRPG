@@ -8,9 +8,11 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { useErrorStore } from '@/store/errorStore';
 import { logEvent } from '@/store/devLogStore';
 import * as campaignGeneratorService from '@/services/ai/campaignGeneratorService';
+import { useAppChrome } from '@/components/layout/AppChromeContext';
 
 const CampaignLoadingScreen: React.FC = () => {
     const { navigate } = useNavigationStore();
+    const { registerBackAction } = useAppChrome();
     const state = useGameStore();
     const { dispatch } = state;
     const { showError } = useErrorStore();
@@ -73,6 +75,16 @@ const CampaignLoadingScreen: React.FC = () => {
 
         generateAndSaveCampaign();
     }, [state, dispatch, navigate, showError]);
+
+    useEffect(() => {
+        registerBackAction({
+            icon: 'back',
+            ariaLabel: 'Voltar para a criação de personagem',
+            onAction: () => navigate('create-character', { replace: true }),
+            variant: 'ghost',
+        });
+        return () => registerBackAction(null);
+    }, [navigate, registerBackAction]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center text-center p-8">

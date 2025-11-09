@@ -14,18 +14,8 @@ export const useGameUI = () => {
     
     // Estado para rastrear qual personagem está sendo exibido na ficha completa
     const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
-    
-    // Estado para o modal de confirmação de saída
-    const [isExitModalOpen, setIsExitModalOpen] = useState(false);
-    
     // Estado para o toggle de mensagens "fora do personagem"
     const [isOff, setIsOff] = useState(false);
-
-    // Estado para o drawer de configurações
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    
-    // Estado para o drawer de log do desenvolvedor
-    const [isDevLogOpen, setIsDevLogOpen] = useState(false);
 
     /**
      * Define o personagem a ser exibido na ficha completa.
@@ -48,13 +38,7 @@ export const useGameUI = () => {
         selectedCharacterId,
         openCharacterSheet,
         closeCharacterSheet,
-        isExitModalOpen,
-        setIsExitModalOpen,
         isOff,
         setIsOff,
-        isSettingsOpen,
-        setIsSettingsOpen,
-        isDevLogOpen,
-        setIsDevLogOpen,
     };
 };
