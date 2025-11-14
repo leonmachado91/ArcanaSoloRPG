@@ -1,43 +1,83 @@
 // components/ui/Toggle.tsx
-// Um componente de interruptor (toggle switch) estilizado, usado para opções binárias (ligado/desligado).
-// É uma substituição visualmente mais agradável para um checkbox.
+// Interruptor acessível com tokens Arcana, helper/error text e estados de foco claros.
 
-import React from 'react';
+import React, { useId } from 'react';
 
 interface ToggleProps {
-    /** Label opcional para o estado "desligado" (à esquerda). */
     labelLeft?: string;
-    /** Label para o estado "ligado" (à direita). */
     labelRight: string;
-    /** O estado atual do interruptor (ligado/desligado). */
     checked?: boolean;
-    /** Função chamada quando o estado do interruptor muda. */
     onChange?: (checked: boolean) => void;
+    disabled?: boolean;
+    helperText?: string;
+    error?: string;
+    className?: string;
 }
 
-const Toggle: React.FC<ToggleProps> = ({ labelLeft, labelRight, checked, onChange }) => {
+const Toggle: React.FC<ToggleProps> = ({
+    labelLeft,
+    labelRight,
+    checked = false,
+    onChange,
+    disabled = false,
+    helperText,
+    error,
+    className,
+}) => {
+    const generatedId = useId();
+    const inputId = `toggle-${generatedId}`;
+    const helperId = helperText || error ? `${inputId}-helper` : undefined;
+
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (onChange) {
-            onChange(event.target.checked);
-        }
+        if (disabled) return;
+        onChange?.(event.target.checked);
     };
 
     return (
-        // O `label` envolve tudo para que o clique em qualquer lugar (incluindo os textos) acione o input.
-        <label className="flex items-center cursor-pointer gap-2 w-fit">
-            {labelLeft && <span className={`text-sm font-bold transition-colors ${!checked ? 'text-slate-300' : 'text-zinc-600'}`}>{labelLeft}</span>}
-            <input
-                type="checkbox"
-                checked={checked}
-                onChange={handleChange}
-                // O input real é visualmente oculto (`sr-only`) e controlado pelo `div` estilizado abaixo.
-                className="sr-only peer"
-            />
-            {/* Este div representa o trilho e o círculo do interruptor, estilizado com classes do Tailwind. */}
-            {/* O seletor `peer-checked:` do Tailwind é usado para mudar o estilo quando o input (o "peer") está marcado. */}
-            <div className="relative w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:bg-amber-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-            <span className={`text-sm font-bold transition-colors ${checked ? 'text-slate-300' : 'text-zinc-600'}`}>{labelRight}</span>
-        </label>
+        <div className={className}>
+            <label htmlFor={inputId} className="flex items-center gap-3 cursor-pointer w-fit">
+                {labelLeft && (
+                    <span className={`text-sm font-semibold transition-colors ${!checked ? 'text-arcana-parchment-200' : 'text-arcana-ink-600'}`}>
+                        {labelLeft}
+                    </span>
+                )}
+                <span className="relative inline-flex items-center">
+                    <input
+                        id={inputId}
+                        type="checkbox"
+                        className="peer sr-only"
+                        checked={checked}
+                        disabled={disabled}
+                        onChange={handleChange}
+                        role="switch"
+                        aria-checked={checked}
+                        aria-disabled={disabled}
+                        aria-describedby={helperId}
+                    />
+                    <span
+                        className={`relative flex h-7 w-12 items-center rounded-full border transition-colors duration-300 focus-within:ring-2 focus-within:ring-arcana-aura-400 focus-within:ring-offset-2 focus-within:ring-offset-arcana-ink-900 ${
+                            disabled ? 'opacity-60 cursor-not-allowed' : ''
+                        } ${checked ? 'bg-arcana-ember-500 border-arcana-ember-400' : 'bg-arcana-ink-700 border-arcana-ink-600'} ${
+                            error ? 'ring-1 ring-arcana-rose-400' : ''
+                        }`}
+                    >
+                        <span
+                            className={`absolute left-1 top-1 inline-block h-5 w-5 transform rounded-full bg-arcana-parchment-50 shadow transition-transform duration-300 ${
+                                checked ? 'translate-x-5' : ''
+                            } ${disabled ? 'opacity-70' : ''}`}
+                        ></span>
+                    </span>
+                </span>
+                <span className={`text-sm font-semibold transition-colors ${checked ? 'text-arcana-parchment-100' : 'text-arcana-ink-600'}`}>
+                    {labelRight}
+                </span>
+            </label>
+            {(helperText || error) && (
+                <p id={helperId} className={`mt-2 text-xs font-medium ${error ? 'text-arcana-rose-400' : 'text-arcana-parchment-300'}`}>
+                    {error || helperText}
+                </p>
+            )}
+        </div>
     );
 };
 

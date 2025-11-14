@@ -28,7 +28,8 @@ const FloatingChromeButtons: React.FC = () => {
       >
         <Button
           variant="ghost"
-          className="h-10 w-10 rounded-full bg-transparent p-0 text-white hover:text-arcana-ember-400 focus-visible:ring-2 focus-visible:ring-arcana-ember-400/60"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-transparent text-white hover:text-arcana-ember-400 focus-visible:ring-2 focus-visible:ring-arcana-ember-400/60"
           onClick={openDevLog}
           aria-label="Abrir Dev Log"
         >
@@ -36,7 +37,8 @@ const FloatingChromeButtons: React.FC = () => {
         </Button>
         <Button
           variant="ghost"
-          className="h-10 w-10 rounded-full bg-transparent p-0 text-white hover:text-arcana-aura-300 focus-visible:ring-2 focus-visible:ring-arcana-aura-300/60"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-transparent text-white hover:text-arcana-aura-300 focus-visible:ring-2 focus-visible:ring-arcana-aura-300/60"
           onClick={openSettings}
           aria-label="Abrir Configurações"
         >

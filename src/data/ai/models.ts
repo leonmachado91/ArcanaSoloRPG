@@ -86,13 +86,6 @@ export const MODEL_DETAILS: Record<string, ModelDetails> = {
             output: 4.00,
         }
     },
-    "imagen-4.0-generate-001": {
-        friendlyName: "Imagen 4.0",
-        pricing: {
-            input: 0, // Preço baseado na saída (por imagem).
-            output: 10.00, // Preço hipotético por 1k imagens.
-        }
-    },
     "gemini-2.5-flash-image": {
         friendlyName: "Nano Banana (Edição)",
         pricing: {
@@ -115,7 +108,7 @@ interface ModelConfig {
 // Agrupamento de modelos por capacidade.
 const textModels = ["gemini-2.5-pro", "gemini-flash-latest", "gemini-flash-lite-latest"];
 const audioModels = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
-const imageModels = ["imagen-4.0-generate-001", "gemini-2.5-flash-image"];
+const imageModels = ["gemini-2.5-flash-image"];
 
 /**
  * Mapeia cada `AiTask` para sua configuração correspondente.

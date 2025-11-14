@@ -26,11 +26,14 @@ export const appConfig = {
             /** Modelo para a geração completa da campanha na tela de loading (mais caro e completo). */
             fullGeneration: "gemini-2.5-pro",
 
+            /** Modelo dedicado à consolidação de cenas em memória longa. */
+            sceneDiary: "gemini-2.5-pro",
+
             /** O cérebro principal do mestre de jogo durante o chat. */
             gameMaster: "gemini-flash-latest",
 
             /** Modelo para gerar imagens de cenas e personagens. */
-            imageGeneration: 'imagen-4.0-generate-001',
+            imageGeneration: 'gemini-2.5-flash-image',
 
             /** Modelo para gerar a narração de voz (Text-to-Speech). */
             audioGeneration: 'gemini-2.5-flash-preview-tts',

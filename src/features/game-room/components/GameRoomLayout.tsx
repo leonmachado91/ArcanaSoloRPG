@@ -8,7 +8,7 @@ import { Message } from '@/types/chat';
 
 interface PlayerPanelProps {
     playerCharacter: Character;
-    generatingImageFor: string | null;
+    isGeneratingImage: boolean;
     onViewMore: (character: Character) => void;
     onGenerateImage: (character: Character) => void;
     onUploadImage: (character: Character, file: File) => void;
@@ -66,7 +66,7 @@ const GameRoomLayout: React.FC<GameRoomLayoutProps> = ({
                     onViewMore={playerPanel.onViewMore}
                     onGenerateImage={playerPanel.onGenerateImage}
                     onUploadImage={playerPanel.onUploadImage}
-                    generatingImageFor={playerPanel.generatingImageFor}
+                    isGeneratingImage={playerPanel.isGeneratingImage}
                 />
 
                 <main className="flex-grow flex flex-col min-h-0 overflow-hidden">
@@ -84,13 +84,13 @@ const GameRoomLayout: React.FC<GameRoomLayoutProps> = ({
                     />
 
                     {playerInput.isGameStarted && (
-                        <PlayerInputBar
-                            isInputDisabled={playerInput.isInputDisabled}
-                            isOff={playerInput.isOff}
-                            setIsOff={playerInput.setIsOff}
-                            onSendMessage={playerInput.onSendMessage}
-                        />
-                    )}
+                    <PlayerInputBar
+                        isInputDisabled={playerInput.isInputDisabled}
+                        isOff={playerInput.isOff}
+                        setIsOff={playerInput.setIsOff}
+                        onSendMessage={playerInput.onSendMessage}
+                    />
+                )}
                 </main>
 
                 <NpcsInScenePanel

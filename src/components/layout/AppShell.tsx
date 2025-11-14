@@ -49,7 +49,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <div className="relative z-10 flex h-full min-h-0 flex-col">
           <AppHeader />
           <FloatingChromeButtons />
-          <main className="flex flex-1 min-h-0 flex-col overflow-hidden">{children}</main>
+          <main className="flex flex-1 min-h-0 flex-col overflow-y-auto">{children}</main>
         </div>
 
         {/* Elementos globais que devem permanecer disponíveis independente da rota. */}

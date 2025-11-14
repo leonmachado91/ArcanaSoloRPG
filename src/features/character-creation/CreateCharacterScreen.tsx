@@ -57,9 +57,9 @@ const CreateCharacterScreen: React.FC = () => {
     /**
      * Manipulador para finalizar a criação do personagem e navegar para a tela de carregamento da campanha.
      */
-    const handleFinishCreation = () => {
+    const handleFinishCreation = useCallback(() => {
         navigate('campaign-loading');
-    };
+    }, [navigate]);
     
     /**
      * Adiciona ou remove uma vantagem/desvantagem, aplicando a lógica de balanceamento de pontos.

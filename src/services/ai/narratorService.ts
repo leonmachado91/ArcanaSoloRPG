@@ -31,6 +31,7 @@ import { useCatalogStore } from "@/store/catalogStore";
 import { useRawChatStore } from "@/store/useRawChatStore";
 
 import { usePromptStore } from "@/store/promptStore";
+import { resolvePrompt } from "./promptFallbacks";
 
 
 
@@ -107,7 +108,7 @@ const getGeminiErrorDetails = (error: unknown) => {
 const shouldRetryGeminiError = (error: unknown): boolean => {
     const { code, status, message } = getGeminiErrorDetails(error);
     if (code && RETRYABLE_STATUS_CODES.has(code)) return true;
-    if (status && RETRYABLE_STATUS_TEXT.has(status.toUpperCase())) return true;
+    if (typeof status === 'string' && RETRYABLE_STATUS_TEXT.has(status.toUpperCase())) return true;
     const normalizedMessage = (message || '').toLowerCase();
     return (
         normalizedMessage.includes('internal error') ||
@@ -137,6 +138,33 @@ const callGeminiWithRetry = async <T>(operation: () => Promise<T>, stageLabel: s
         }
     }
     throw lastError ?? new Error(`Falha ao ${stageLabel}`);
+};
+
+const buildSceneDiariesBlock = (state: GameState): { text: string; count: number } | null => {
+    const loreEntries = state.campaign.lore || [];
+    const diaryEntries = loreEntries.filter(entry => entry.category?.startsWith('scene_diary:'));
+    if (diaryEntries.length === 0) return null;
+
+    const scenesById = new Map((state.campaign.scenes || []).map(scene => [scene.id, scene]));
+    const ordered = diaryEntries.slice().sort((a, b) => {
+        const sceneIdA = a.category.split(':')[1];
+        const sceneIdB = b.category.split(':')[1];
+        const sceneA = scenesById.get(sceneIdA);
+        const sceneB = scenesById.get(sceneIdB);
+        const numA = sceneA?.sceneNumber ?? Number.MAX_SAFE_INTEGER;
+        const numB = sceneB?.sceneNumber ?? Number.MAX_SAFE_INTEGER;
+        return numA - numB;
+    });
+
+    const block = ordered
+        .map(entry => entry.content.trim())
+        .filter(Boolean)
+        .join('\n\n---\n\n')
+        .trim();
+
+    if (!block) return null;
+    const text = `# DiÃ¡rio Completo da Campanha\n${block}`;
+    return { text, count: ordered.length };
 };
 
 
@@ -169,46 +197,15 @@ const formatMessageForAIHistory = (message: Message): string | null => {
     
 
     const { prompts } = usePromptStore.getState();
-
     const tags = {
-
-        TIME_CONTEXT_TAG: prompts['TIME_CONTEXT_TAG']?.content,
-
-        EVENT_CONTEXT_TAG: prompts['EVENT_CONTEXT_TAG']?.content,
-
-        NEW_SCENE_CONTEXT_TAG_WITH_CARDS: prompts['NEW_SCENE_CONTEXT_TAG_WITH_CARDS']?.content,
-
-        NEW_SCENE_CONTEXT_TAG: prompts['NEW_SCENE_CONTEXT_TAG']?.content,
-
-        COMBAT_CONTEXT_TAG: prompts['COMBAT_CONTEXT_TAG']?.content,
-
-        TEST_CONTEXT_TAG: prompts['TEST_CONTEXT_TAG']?.content,
-
-        PENDING_TEST_CONTEXT_TAG: prompts['PENDING_TEST_CONTEXT_TAG']?.content
-
+        TIME_CONTEXT_TAG: resolvePrompt(prompts, 'TIME_CONTEXT_TAG', context).value,
+        EVENT_CONTEXT_TAG: resolvePrompt(prompts, 'EVENT_CONTEXT_TAG', context).value,
+        NEW_SCENE_CONTEXT_TAG_WITH_CARDS: resolvePrompt(prompts, 'NEW_SCENE_CONTEXT_TAG_WITH_CARDS', context).value,
+        NEW_SCENE_CONTEXT_TAG: resolvePrompt(prompts, 'NEW_SCENE_CONTEXT_TAG', context).value,
+        COMBAT_CONTEXT_TAG: resolvePrompt(prompts, 'COMBAT_CONTEXT_TAG', context).value,
+        TEST_CONTEXT_TAG: resolvePrompt(prompts, 'TEST_CONTEXT_TAG', context).value,
+        PENDING_TEST_CONTEXT_TAG: resolvePrompt(prompts, 'PENDING_TEST_CONTEXT_TAG', context).value,
     };
-
-    
-
-    for (const key in tags) {
-
-        if (!tags[key as keyof typeof tags]) {
-
-            throw createAppError(
-
-                'UNKNOWN_ERROR',
-
-                `Prompt de tag de contexto '${key}' nÃ£o encontrado.`,
-
-                { missingTag: key, messageId: message.id },
-
-                context
-
-            );
-
-        }
-
-    }
 
     let formattedText: string | null = null;
 
@@ -480,12 +477,12 @@ const _sendMessageAndHandleResponse = async (
 
         const apiCallPromise = callGeminiWithRetry(
             () => chatSession!.sendMessage({ message: messageToSend }),
-            'enviar a ação do jogador para a IA'
+            'enviar a aï¿½ï¿½o do jogador para a IA'
         );
 
         const response = await Promise.race([apiCallPromise, timeoutPromise]);
 
-        // Extrai a narração de texto imediatamente, pois ela pode coexistir com as chamadas de ferramentas.
+        // Extrai a narraï¿½ï¿½o de texto imediatamente, pois ela pode coexistir com as chamadas de ferramentas.
 
         const primaryCandidate = response.candidates?.[0];
 
@@ -719,20 +716,8 @@ export const initializeChatSession = async (gameState: GameState): Promise<void>
     const temperature = getConfig().ai.temperature;
 
     const { prompts } = usePromptStore.getState();
-
-
-
-    const baseSystemInstruction = prompts['NARRATOR_SYSTEM_INSTRUCTION']?.content;
-
-    const sessionStartTag = prompts['SESSION_START_CONTEXT_TAG']?.content;
-
-
-
-    if (!baseSystemInstruction || !sessionStartTag) {
-
-        throw createAppError('UNKNOWN_ERROR', 'Prompts essenciais da IA Mestre nÃƒÂ£o foram encontrados. Verifique a base de dados.', null, context);
-
-    }
+    const baseSystemInstruction = resolvePrompt(prompts, 'NARRATOR_SYSTEM_INSTRUCTION', context).value;
+    const sessionStartTag = resolvePrompt(prompts, 'SESSION_START_CONTEXT_TAG', context).value;
 
 
 
@@ -755,10 +740,18 @@ export const initializeChatSession = async (gameState: GameState): Promise<void>
         const summary = _generateGameStateSummary(gameState);
 
         const contextText = sessionStartTag.replace('{summary}', summary);
-
         const contextMessage: Content = { role: 'user', parts: [{ text: contextText }] };
 
-
+        const diaryBlock = buildSceneDiariesBlock(gameState);
+        let diaryContent: Content | null = null;
+        if (diaryBlock) {
+            diaryContent = { role: 'user', parts: [{ text: diaryBlock.text }] };
+            logEvent({
+                type: 'system',
+                message: 'SceneMemory: DiÃ¡rio anexado ao contexto do Mestre.',
+                payload: { entries: diaryBlock.count },
+            });
+        }
 
         const recentHistory = gameState.campaign.chatHistory.slice(-10);
 
@@ -780,7 +773,9 @@ export const initializeChatSession = async (gameState: GameState): Promise<void>
 
         
 
-        const initialHistory: Content[] = [contextMessage, ...mappedHistory];
+        const initialHistory: Content[] = diaryContent
+            ? [contextMessage, diaryContent, ...mappedHistory]
+            : [contextMessage, ...mappedHistory];
 
         
 
@@ -873,18 +868,7 @@ export const updateAIContext = async (changeDescription: string): Promise<string
     
 
     const { prompts } = usePromptStore.getState();
-
-    const stateChangeTag = prompts['STATE_CHANGE_CONTEXT_TAG']?.content;
-
-    if (!stateChangeTag) {
-
-        console.error(`[${context}] Prompt 'STATE_CHANGE_CONTEXT_TAG' nÃƒÂ£o encontrado.`);
-
-        return '';
-
-    }
-
-
+    const stateChangeTag = resolvePrompt(prompts, 'STATE_CHANGE_CONTEXT_TAG', context).value;
 
     const contextMessage = stateChangeTag.replace('{description}', changeDescription);
 

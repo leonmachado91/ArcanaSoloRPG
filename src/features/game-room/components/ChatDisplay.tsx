@@ -1,15 +1,12 @@
 // features/game-room/components/ChatDisplay.tsx
-import React, { useRef, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import ChatMessage from '@/components/game/ChatMessage';
 import SystemMessage from '@/components/game/SystemMessage';
 import Spinner from '@/components/ui/Spinner';
 import { Character } from '@/types/character';
 import { Message } from '@/types/chat';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useRawChatStore } from '@/store/useRawChatStore';
-import RawChatTurn from '@/features/dev-log/components/RawChatTurn';
-import Icon from '@/components/ui/Icon';
 import InitialObjectiveSetter from './InitialObjectiveSetter';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 
 interface ChatDisplayProps {
     isGameStarted: boolean;
@@ -24,6 +21,8 @@ interface ChatDisplayProps {
     isMasterThinking: boolean;
 }
 
+type ChatFilter = 'all' | 'player' | 'master' | 'system';
+
 const ChatDisplay: React.FC<ChatDisplayProps> = ({
     isGameStarted,
     playerCharacter,
@@ -36,61 +35,108 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
     allCharacters,
     isMasterThinking,
 }) => {
-    const chatContainerRef = useRef<HTMLDivElement>(null);
-    
-    const isRawModeEnabled = useSettingsStore(state => state.isRawModeEnabled);
-    const rawChatHistory = useRawChatStore(state => state.history);
-    const systemInstruction = useRawChatStore(state => state.systemInstruction);
+    const virtuosoRef = useRef<VirtuosoHandle>(null);
+    const [filter, setFilter] = useState<ChatFilter>('all');
+
+    const filteredMessages = useMemo(() => {
+        if (filter === 'player') {
+            return chatHistory.filter(msg => msg.authorId === playerCharacter.id);
+        }
+        if (filter === 'master') {
+            return chatHistory.filter(msg => msg.authorId === 'master');
+        }
+        if (filter === 'system') {
+            return chatHistory.filter(msg => msg.authorId === 'system' || msg.type !== 'chat');
+        }
+        return chatHistory;
+    }, [chatHistory, filter, playerCharacter.id]);
 
     useEffect(() => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-    }, [chatHistory, isMasterThinking, rawChatHistory]);
+        if (!virtuosoRef.current) return;
+        virtuosoRef.current.scrollToIndex({
+            index: filteredMessages.length - 1,
+            align: 'end',
+            behavior: 'smooth',
+        });
+    }, [filteredMessages.length]);
 
-    const renderNormalChat = () => (
-        <div className="space-y-6">
-            {chatHistory.map(msg => {
+    const normalChat = (
+        <Virtuoso
+            ref={virtuosoRef}
+            data={filteredMessages}
+            style={{ height: '100%' }}
+            followOutput="smooth"
+            itemContent={(index, msg) => {
+                const prev = filteredMessages[index - 1];
+                const canGroup =
+                    msg.type === 'chat' &&
+                    prev &&
+                    prev.type === 'chat' &&
+                    prev.authorId === msg.authorId &&
+                    msg.authorId !== 'master' &&
+                    msg.authorId !== 'system';
+
                 if (msg.type === 'chat') {
-                    return <ChatMessage key={msg.id} message={msg} playerId={playerCharacter.id} onGenerateImage={onGenerateImage} onDelete={onDeleteMessage} />;
+                    return (
+                        <div className="py-3">
+                            <ChatMessage
+                                message={msg}
+                                playerId={playerCharacter.id}
+                                onGenerateImage={onGenerateImage}
+                                onDelete={onDeleteMessage}
+                                hideAuthorMetadata={Boolean(canGroup)}
+                            />
+                        </div>
+                    );
                 }
-                return <SystemMessage key={msg.id} message={msg} onRollDice={onRollDice} onDelete={onDeleteMessage} allCharacters={allCharacters} />;
-            })}
-            {isMasterThinking && (
-                <div className="flex items-center justify-center gap-3 my-4 text-slate-400 italic animate-fade-in-sm">
-                    <Spinner className="w-5 h-5" />
-                    <span>O Mestre está pensando...</span>
-                </div>
-            )}
-        </div>
-    );
-
-    const renderRawLogChat = () => (
-        <div className="space-y-2 font-mono text-sm">
-            {systemInstruction && (
-                 <div className="border-l-4 border-purple-700 bg-purple-950/20 p-3 my-2 space-y-2">
-                    <div className="flex items-center gap-2 text-purple-300 font-bold">
-                        <Icon name="settings" className="w-5 h-5" />
-                        <span>System Instruction</span>
+                return (
+                    <div className="py-3">
+                        <SystemMessage message={msg} onRollDice={onRollDice} onDelete={onDeleteMessage} allCharacters={allCharacters} />
                     </div>
-                    <p className="text-slate-300 whitespace-pre-wrap">{systemInstruction}</p>
-                </div>
-            )}
-            {rawChatHistory.map((turn, index) => (
-                <RawChatTurn key={index} turn={turn} />
-            ))}
-            {isMasterThinking && (
-                <div className="flex items-center justify-center gap-3 my-4 text-slate-400 italic animate-fade-in-sm">
-                    <Spinner className="w-5 h-5" />
-                    <span>Processando...</span>
-                </div>
-            )}
-        </div>
+                );
+            }}
+            components={{
+                Footer: () =>
+                    isMasterThinking ? (
+                        <div className="flex items-center justify-center gap-3 my-4 text-slate-400 italic animate-fade-in-sm">
+                            <Spinner className="w-5 h-5" />
+                            <span>O Mestre está pensando...</span>
+                        </div>
+                    ) : null,
+            }}
+        />
     );
 
+    const filterOptions: { label: string; value: ChatFilter }[] = [
+        { label: 'Todos', value: 'all' },
+        { label: 'Jogador', value: 'player' },
+        { label: 'Mestre', value: 'master' },
+        { label: 'Sistema', value: 'system' },
+    ];
+
+    const renderFilters = () => (
+        <div className="flex flex-wrap gap-2">
+            {filterOptions.map(option => {
+                const isActive = option.value === filter;
+                return (
+                    <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFilter(option.value)}
+                        className={`text-xs font-semibold rounded-full border px-3 py-1 transition ${
+                            isActive ? 'bg-arcana-ember-500 text-white border-arcana-ember-300' : 'text-arcana-parchment-300 border-arcana-ink-700 hover:border-arcana-ember-400'
+                        }`}
+                        aria-pressed={isActive}
+                    >
+                        {option.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
 
     return (
-        <div ref={chatContainerRef} className="flex-grow min-h-0 p-4 overflow-y-auto">
+        <div className="flex-grow min-h-0 p-4 overflow-hidden">
             {!isGameStarted ? (
                 <InitialObjectiveSetter
                     playerCharacter={playerCharacter}
@@ -98,7 +144,12 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
                     handleStartGame={handleStartGame}
                 />
             ) : (
-                isRawModeEnabled ? renderRawLogChat() : renderNormalChat()
+                <div className="flex h-full flex-col">
+                    {renderFilters()}
+                    <div className="mt-4 flex-1 min-h-0">
+                        {normalChat}
+                    </div>
+                </div>
             )}
         </div>
     );

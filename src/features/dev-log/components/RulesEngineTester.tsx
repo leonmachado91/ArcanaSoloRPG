@@ -38,6 +38,36 @@ const ResultDisplay: React.FC<{ result: any }> = ({ result }) => {
     );
 };
 
+type RulesTool = 'store' | 'scene' | 'items' | 'difficulty' | 'combat' | 'severity' | 'condition' | 'progress' | 'arcana' | 'oracle' | 'turn';
+
+const TOOL_OPTIONS = [
+    { value: 'scene', label: 'Gerenciar Cena / NPCs' },
+    { value: 'store', label: 'Visualizador de Stores' },
+    { value: 'items', label: 'Adicionar Item' },
+    { value: 'difficulty', label: 'Teste de Dificuldade' },
+    { value: 'combat', label: 'Ação Contestada' },
+    { value: 'severity', label: 'Severidade de Dano' },
+    { value: 'condition', label: 'Aplicar Condição' },
+    { value: 'progress', label: 'Progresso de Missão' },
+    { value: 'arcana', label: 'Sortear Cartas' },
+    { value: 'oracle', label: 'Consulta a Oráculos' },
+    { value: 'turn', label: 'Avançar Turno' },
+] as const;
+
+const TOOL_DESCRIPTIONS: Record<RulesTool, string> = {
+    store: 'Inspecione o estado das stores e prompts carregados.',
+    scene: 'Force novas cenas, crie NPCs ou adicione personagens à cena ativa.',
+    items: 'Teste rapidamente a inclusão de itens em qualquer personagem.',
+    difficulty: 'Rode checks informando dificuldade, elemento e modificadores.',
+    combat: 'Simule confrontos e envie o teste para o chat.',
+    severity: 'Calcule manualmente a severidade de dano.',
+    condition: 'Aplique condições nos personagens selecionados.',
+    progress: 'Adicione pontos de progresso ou missões.',
+    arcana: 'Force um novo sorteio dos baralhos do Arcana.',
+    oracle: 'Consulte tabelas de oráculos para improvisar eventos.',
+    turn: 'Finalize o turno atual da cena ativa.',
+};
+
 
 const RulesEngineTester: React.FC = () => {
     const state = useGameStore();
@@ -73,6 +103,7 @@ const RulesEngineTester: React.FC = () => {
     const [isCreatingNpc, setIsCreatingNpc] = useState(false);
     // FIX: Removed state related to obsolete prompt seeding.
     const [promptStoreState, setPromptStoreState] = useState<any>(null);
+    const [activeTool, setActiveTool] = useState<RulesTool>('scene');
 
 
     const conditionOptions = useMemo(() => allConditions.map(c => ({ value: c.id.toString(), label: c.name })), [allConditions]);
@@ -248,139 +279,146 @@ const RulesEngineTester: React.FC = () => {
 
     return (
         <div className="space-y-6 overflow-y-auto h-full pr-2">
-            
-            <TestSection title="Visualizador de Stores">
-                <p className="text-sm text-slate-400 font-body-serif">Clique para ver o estado atual dos prompts carregados do Supabase.</p>
-                <Button onClick={handleShowPromptStore}>
-                    Exibir Estado do Prompt Store
-                </Button>
-                <ResultDisplay result={promptStoreState} />
-            </TestSection>
-            
-            <TestSection title="Gerenciamento de Cena e Personagens">
-                <Button onClick={handleNewScene} variant="secondary">Forçar Nova Cena</Button>
-                
-                <div className="pt-4 border-t border-zinc-800">
-                    <h4 className="font-semibold text-slate-300 mb-2">Adicionar NPC à Cena Ativa</h4>
-                    <div className="flex items-end gap-2">
-                        <div className="flex-grow">
-                            {npcOptions.length > 0 ? (
-                                 <Select label="Personagem" options={npcOptions} value={charToAddToScene} onChange={setCharToAddToScene} />
-                            ) : <p className='text-sm text-zinc-500'>Nenhum NPC na campanha para adicionar.</p>}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4">
+                <Select
+                    label="Ferramenta"
+                    value={activeTool}
+                    onChange={(value) => setActiveTool(value as RulesTool)}
+                    options={TOOL_OPTIONS as Array<{ value: string; label: string }>}
+                />
+                <p className="mt-2 text-sm text-slate-400">{TOOL_DESCRIPTIONS[activeTool]}</p>
+            </div>
+
+            {activeTool === 'store' && (
+                <TestSection title="Visualizador de Stores">
+                    <p className="text-sm text-slate-400 font-body-serif">Clique para ver o estado atual dos prompts carregados do Supabase.</p>
+                    <Button onClick={handleShowPromptStore}>Exibir Estado do Prompt Store</Button>
+                    <ResultDisplay result={promptStoreState} />
+                </TestSection>
+            )}
+
+            {activeTool === 'scene' && (
+                <TestSection title="Gerenciamento de Cena e Personagens">
+                    <Button onClick={handleNewScene} variant="secondary">Forçar Nova Cena</Button>
+                    <div className="pt-4 border-t border-zinc-800">
+                        <h4 className="font-semibold text-slate-300 mb-2">Adicionar NPC à Cena Ativa</h4>
+                        <div className="flex items-end gap-2">
+                            <div className="flex-grow">
+                                {npcOptions.length > 0 ? (
+                                     <Select label="Personagem" options={npcOptions} value={charToAddToScene} onChange={setCharToAddToScene} />
+                                ) : <p className='text-sm text-zinc-500'>Nenhum NPC na campanha para adicionar.</p>}
+                            </div>
+                            <Button onClick={handleAddCharacterToScene} disabled={!charToAddToScene || npcOptions.length === 0}>Adicionar</Button>
                         </div>
-                        <Button onClick={handleAddCharacterToScene} disabled={!charToAddToScene || npcOptions.length === 0}>Adicionar</Button>
                     </div>
-                </div>
-
-                 <div className="pt-4 border-t border-zinc-800">
-                    <h4 className="font-semibold text-slate-300 mb-2">Criar Novo NPC</h4>
-                    <div className="space-y-3">
-                        <Input label="Nome do NPC" value={npcName} onChange={e => setNpcName(e.target.value)} placeholder="Nome..." />
-                        <Input label="Descrição" value={npcDesc} onChange={e => setNpcDesc(e.target.value)} placeholder="Aparência..." />
-                        <Textarea label="História" value={npcHistory} onChange={e => setNpcHistory(e.target.value)} placeholder="Background..." rows={2} />
-                        <Button onClick={handleCreateNpc} isLoading={isCreatingNpc} className="w-full">Criar e Adicionar NPC</Button>
+                    <div className="pt-4 border-t border-zinc-800">
+                        <h4 className="font-semibold text-slate-300 mb-2">Criar Novo NPC</h4>
+                        <div className="space-y-3">
+                            <Input label="Nome do NPC" value={npcName} onChange={e => setNpcName(e.target.value)} placeholder="Nome..." />
+                            <Input label="Descrição" value={npcDesc} onChange={e => setNpcDesc(e.target.value)} placeholder="Aparência..." />
+                            <Textarea label="História" value={npcHistory} onChange={e => setNpcHistory(e.target.value)} placeholder="Background..." rows={2} />
+                            <Button onClick={handleCreateNpc} isLoading={isCreatingNpc} className="w-full">Criar e Adicionar NPC</Button>
+                        </div>
                     </div>
-                </div>
-            </TestSection>
-            
-            <TestSection title="Adicionar Item (Teste Dinâmico)">
-                <Select label="Personagem Alvo" options={characterOptions} value={itemTargetCharId} onChange={setItemTargetCharId} />
-                <div className="grid grid-cols-2 gap-4">
-                    <Input label="Nome do Item" value={itemName} onChange={e => setItemName(e.target.value)} />
-                    <Input label="Quantidade" type="number" value={itemQty} onChange={e => setItemQty(parseInt(e.target.value, 10) || 1)} />
-                </div>
-                <Input label="Descrição do Item" value={itemDesc} onChange={e => setItemDesc(e.target.value)} />
-                <Button onClick={handleAddItem} disabled={!itemName || !itemTargetCharId}>Adicionar Item</Button>
-            </TestSection>
+                </TestSection>
+            )}
 
-            <TestSection title="Teste de Dificuldade">
-                <div className="grid grid-cols-3 gap-4">
-                     <Select 
-                        label="Elemento" 
-                        options={[
-                            { value: 'fire', label: 'Fogo' },
-                            { value: 'water', label: 'Água' },
-                            { value: 'air', label: 'Ar' },
-                            { value: 'earth', label: 'Terra' },
-                        ]} 
-                        value={selectedElement} 
-                        onChange={v => setSelectedElement(v as ElementType)} 
-                    />
-                    <Input label="Dificuldade" type="number" value={difficulty} onChange={e => setDifficulty(parseInt(e.target.value, 10) || 0)} />
-                    <Input label="Modificador" type="number" value={modifier} onChange={e => setModifier(parseInt(e.target.value, 10) || 0)} />
-                </div>
-                <div className="flex gap-2">
-                    <Button onClick={handleDifficultyCheck} className="flex-1">Executar e Rolar</Button>
-                    <Button onClick={handleSendDifficultyCheckToRoll} variant="secondary" className="flex-1">Enviar para Rolar</Button>
-                </div>
-                <ResultDisplay result={difficultyResult} />
-            </TestSection>
-
-            <TestSection title="Ação Contestada (Combate)">
-                <div className="grid grid-cols-2 gap-4">
-                    <Select label="Atacante (Fogo)" options={characterOptions} value={attackerId} onChange={setAttackerId} />
-                    <Select label="Defensor (Terra)" options={characterOptions} value={defenderId} onChange={setDefenderId} />
-                     <Input label="Modificador Atacante" type="number" value={attackerMod} onChange={e => setAttackerMod(parseInt(e.target.value, 10) || 0)} />
-                    <Input label="Modificador Defensor" type="number" value={defenderMod} onChange={e => setDefenderMod(parseInt(e.target.value, 10) || 0)} />
-                </div>
-                 <div className="flex gap-2">
-                    <Button onClick={handleContestedCheck} className="flex-1">Executar e Rolar</Button>
-                    <Button onClick={handleSendContestedCheckToRoll} variant="secondary" className="flex-1">Enviar para Rolar</Button>
-                </div>
-                <ResultDisplay result={contestedResult} />
-            </TestSection>
-
-            <TestSection title="Cálculo de Severidade de Dano">
-                <Input 
-                    label="Dados de Defesa (separados por vírgula)" 
-                    value={severityInput}
-                    onChange={e => setSeverityInput(e.target.value)}
-                    placeholder="Ex: 6, 6, 2"
-                />
-                <Button onClick={handleSeverityCheck}>Calcular Severidade</Button>
-                <ResultDisplay result={severityResult} />
-            </TestSection>
-
-            <TestSection title="Aplicar Condição">
-                <Select label="Personagem Alvo" options={characterOptions} value={itemTargetCharId} onChange={setItemTargetCharId} />
-                {isLoadingConditions ? <Spinner/> : (
+            {activeTool === 'items' && (
+                <TestSection title="Adicionar Item (Teste Dinâmico)">
+                    <Select label="Personagem Alvo" options={characterOptions} value={itemTargetCharId} onChange={setItemTargetCharId} />
                     <div className="grid grid-cols-2 gap-4">
-                        <Select label="Condição" options={conditionOptions} value={conditionId?.toString() ?? ''} onChange={v => setConditionId(parseInt(v,10))} />
-                        <Select label="Intensidade" options={[{value: 'Leve', label: 'Leve'}, {value: 'Moderado', label: 'Moderada'}, {value: 'Grave', label: 'Grave'}]} value={intensity} onChange={v => setIntensity(v as any)} />
+                        <Input label="Nome do Item" value={itemName} onChange={e => setItemName(e.target.value)} />
+                        <Input label="Quantidade" type="number" value={itemQty} onChange={e => setItemQty(parseInt(e.target.value, 10) || 1)} />
                     </div>
-                )}
-                <Button onClick={handleApplyCondition} disabled={typeof conditionId !== 'number'}>Aplicar Condição</Button>
-            </TestSection>
+                    <Input label="Descrição do Item" value={itemDesc} onChange={e => setItemDesc(e.target.value)} />
+                    <Button onClick={handleAddItem} disabled={!itemName || !itemTargetCharId}>Adicionar Item</Button>
+                </TestSection>
+            )}
 
-            <TestSection title="Adicionar Pontos de Progresso">
-                <Select label="Personagem Alvo" options={characterOptions} value={itemTargetCharId} onChange={setItemTargetCharId} />
-                <Input label="Pontos a Adicionar" type="number" value={progressPoints} onChange={e => setProgressPoints(parseInt(e.target.value, 10) || 0)} />
-                <Button onClick={handleAddProgress}>Adicionar Progresso</Button>
-                <ResultDisplay result={progressResult} />
-            </TestSection>
-            
-            <TestSection title="Sorteio de Cartas Arcana">
-                <Button onClick={handleDrawArcana}>Sortear Cartas</Button>
-                <ResultDisplay result={arcanaResult} />
-            </TestSection>
+            {activeTool === 'difficulty' && (
+                <TestSection title="Teste de Dificuldade">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input label="Dificuldade (DC)" type="number" value={difficulty} onChange={e => setDifficulty(parseInt(e.target.value, 10) || 0)} />
+                        <Input label="Modificador" type="number" value={modifier} onChange={e => setModifier(parseInt(e.target.value, 10) || 0)} />
+                    </div>
+                    <Select label="Elemento" value={selectedElement} onChange={v => setSelectedElement(v as ElementType)} options={[{ value: 'fire', label: 'Fogo' },{ value: 'water', label: 'Água' },{ value: 'air', label: 'Ar' },{ value: 'earth', label: 'Terra' }]} />
+                    <Button onClick={handleDifficultyCheck}>Rolar Teste</Button>
+                    <ResultDisplay result={difficultyResult} />
+                </TestSection>
+            )}
 
-            <TestSection title="Consulta a Oráculos">
-                 <Select 
-                    label="Tabela de Oráculo" 
-                    options={oracleOptions} 
-                    value={selectedOracle} 
-                    onChange={v => setSelectedOracle(v as OracleTableName)} 
-                />
-                <Button onClick={handleQueryOracle}>Consultar Oráculo</Button>
-                <ResultDisplay result={oracleResult} />
-            </TestSection>
+            {activeTool === 'combat' && (
+                <TestSection title="Ação Contestada (Combate)">
+                    <div className="grid grid-cols-2 gap-4">
+                        <Select label="Atacante" options={characterOptions} value={attackerId} onChange={setAttackerId} />
+                        <Select label="Defensor" options={characterOptions} value={defenderId} onChange={setDefenderId} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input label="Modificador do Atacante" type="number" value={attackerMod} onChange={e => setAttackerMod(parseInt(e.target.value, 10) || 0)} />
+                        <Input label="Modificador do Defensor" type="number" value={defenderMod} onChange={e => setDefenderMod(parseInt(e.target.value, 10) || 0)} />
+                    </div>
+                    <div className="flex gap-2">
+                        <Button onClick={handleContestedCheck} variant="primary" className="flex-1">Simular Resultado</Button>
+                        <Button onClick={handleSendContestedCheckToRoll} variant="secondary" className="flex-1">Enviar para Rolar</Button>
+                    </div>
+                    <ResultDisplay result={contestedResult} />
+                </TestSection>
+            )}
 
-            <TestSection title="Avançar Turno">
-                <p className="text-sm text-slate-400">Turno Atual: {state.campaign.scenes?.find(s=>s.isActive)?.turnCount || 0}</p>
-                <Button onClick={handleEndTurn}>Finalizar Turno</Button>
-            </TestSection>
+            {activeTool === 'severity' && (
+                <TestSection title="Cálculo de Severidade de Dano">
+                    <Input label="Dados de Defesa (separados por vírgula)" value={severityInput} onChange={e => setSeverityInput(e.target.value)} placeholder="Ex: 6, 6, 2" />
+                    <Button onClick={handleSeverityCheck}>Calcular Severidade</Button>
+                    <ResultDisplay result={severityResult} />
+                </TestSection>
+            )}
+
+            {activeTool === 'condition' && (
+                <TestSection title="Aplicar Condição">
+                    <Select label="Personagem Alvo" options={characterOptions} value={itemTargetCharId} onChange={setItemTargetCharId} />
+                    {isLoadingConditions ? <Spinner/> : (
+                        <div className="grid grid-cols-2 gap-4">
+                            <Select label="Condição" options={conditionOptions} value={conditionId?.toString() ?? ''} onChange={v => setConditionId(parseInt(v,10))} />
+                            <Select label="Intensidade" options={[{value: 'Leve', label: 'Leve'}, {value: 'Moderado', label: 'Moderada'}, {value: 'Grave', label: 'Grave'}]} value={intensity} onChange={v => setIntensity(v as any)} />
+                        </div>
+                    )}
+                    <Button onClick={handleApplyCondition} disabled={typeof conditionId !== 'number'}>Aplicar Condição</Button>
+                </TestSection>
+            )}
+
+            {activeTool === 'progress' && (
+                <TestSection title="Adicionar Pontos de Progresso">
+                    <Select label="Personagem Alvo" options={characterOptions} value={itemTargetCharId} onChange={setItemTargetCharId} />
+                    <Input label="Pontos a Adicionar" type="number" value={progressPoints} onChange={e => setProgressPoints(parseInt(e.target.value, 10) || 0)} />
+                    <Button onClick={handleAddProgress}>Adicionar Progresso</Button>
+                    <ResultDisplay result={progressResult} />
+                </TestSection>
+            )}
+
+            {activeTool === 'arcana' && (
+                <TestSection title="Sorteio de Cartas Arcana">
+                    <Button onClick={handleDrawArcana}>Sortear Cartas</Button>
+                    <ResultDisplay result={arcanaResult} />
+                </TestSection>
+            )}
+
+            {activeTool === 'oracle' && (
+                <TestSection title="Consulta a Oráculos">
+                     <Select label="Tabela de Oráculo" options={oracleOptions} value={selectedOracle} onChange={v => setSelectedOracle(v as OracleTableName)} />
+                    <Button onClick={handleQueryOracle}>Consultar Oráculo</Button>
+                    <ResultDisplay result={oracleResult} />
+                </TestSection>
+            )}
+
+            {activeTool === 'turn' && (
+                <TestSection title="Avançar Turno">
+                    <p className="text-sm text-slate-400">Turno Atual: {state.campaign.scenes?.find(s=>s.isActive)?.turnCount || 0}</p>
+                    <Button onClick={handleEndTurn}>Finalizar Turno</Button>
+                </TestSection>
+            )}
         </div>
     );
 };
+
 
 export default RulesEngineTester;

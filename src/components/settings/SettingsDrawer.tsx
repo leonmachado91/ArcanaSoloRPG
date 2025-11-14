@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import Drawer from '../ui/Drawer';
 import Button from '../ui/Button';
 import Select from '../ui/Select';
-import Toggle from '../ui/Toggle';
 import { useSettingsStore } from '../../store/settingsStore';
 import { AI_MODEL_CONFIG, AiTask, MODEL_DETAILS } from '../../data/ai/models';
 import { VOICES } from '../../data/ai/voices';
@@ -17,8 +16,8 @@ import ContentEditorModal from '@/features/content-editor/components/ContentEdit
 const SettingsDrawer: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
     // `useSettingsStore` hook para ler e modificar as configurações globais.
     const { 
-        aiModels, voice, isRawModeEnabled,
-        setAiModel, setVoice, setIsRawModeEnabled 
+        aiModels, voice,
+        setAiModel, setVoice
     } = useSettingsStore();
     
     // `useAuthStore` para acessar os dados do usuário e a função de logout.
@@ -106,22 +105,17 @@ const SettingsDrawer: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
                     {/* Seção para Opções de Debugging */}
                     <section>
                         <h3 className="text-xl font-display text-white mb-4">Ferramentas de Desenvolvimento</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-2">Modo de Chat Raw</label>
-                                <p className="text-xs text-slate-500 mb-2 font-body-serif">Substitui o chat normal por um feed de eventos brutos do sistema para depuração.</p>
-                                <Toggle
-                                    labelLeft='Desligado'
-                                    labelRight='Ligado'
-                                    checked={isRawModeEnabled}
-                                    onChange={setIsRawModeEnabled}
-                                />
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Editor de Conteúdo da IA</label>
+                                <p className="text-xs text-slate-500 mb-2 font-body-serif">Abra uma interface para editar os prompts e as regras da IA em tempo real.</p>
+                                <Button variant="secondary" onClick={() => setIsContentEditorOpen(true)}>Abrir Editor de Conteúdo</Button>
                             </div>
-                             <div>
-                                 <label className="block text-sm font-medium text-slate-300 mb-2">Editor de Conteúdo da IA</label>
-                                 <p className="text-xs text-slate-500 mb-2 font-body-serif">Abra uma interface para editar os prompts e as regras da IA em tempo real.</p>
-                                 <Button variant="secondary" onClick={() => setIsContentEditorOpen(true)}>Abrir Editor de Conteúdo</Button>
-                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Exportar Logs</label>
+                                <p className="text-xs text-slate-500 mb-2 font-body-serif">Use o painel do desenvolvedor para visualizar o RAW e exportar eventos da sessão.</p>
+                                <p className="text-sm text-slate-400">Abra via ícone flutuante em qualquer tela.</p>
+                            </div>
                         </div>
                     </section>
 

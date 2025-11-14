@@ -1,5 +1,6 @@
 // features/game-room/components/PlayerInputBar.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
+import Composer from './Composer';
 import Icon from '@/components/ui/Icon';
 
 interface PlayerInputBarProps {
@@ -16,18 +17,7 @@ const PlayerInputBar: React.FC<PlayerInputBarProps> = ({
     onSendMessage,
 }) => {
     const [playerInput, setPlayerInput] = useState('');
-    const inputRef = useRef<HTMLTextAreaElement>(null);
-
-    // Effect to auto-adjust the height of the textarea
-    useEffect(() => {
-        const textarea = inputRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto'; // Reset height to recalculate
-            const scrollHeight = textarea.scrollHeight;
-            const maxHeight = 200; // Limit to prevent infinite growth
-            textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
-        }
-    }, [playerInput]);
+    const formRef = useRef<HTMLFormElement>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,16 +26,9 @@ const PlayerInputBar: React.FC<PlayerInputBarProps> = ({
         setPlayerInput('');
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            e.currentTarget.form?.requestSubmit();
-        }
-    };
-
     return (
         <div className="flex-shrink-0 border-t border-zinc-800 bg-[#121212]">
-            <form onSubmit={handleSubmit} className="p-4 flex items-center gap-3">
+            <form ref={formRef} onSubmit={handleSubmit} className="p-4 flex items-center gap-3">
                 <div
                     className={`flex w-full items-center gap-3 rounded-3xl border px-4 py-2 transition-colors focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50 ${
                         isOff
@@ -65,15 +48,18 @@ const PlayerInputBar: React.FC<PlayerInputBarProps> = ({
                             className={`w-5 h-5 ${isOff ? 'text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.45)]' : 'text-slate-400'}`}
                         />
                     </button>
-                    <textarea
-                        ref={inputRef}
-                        rows={1}
-                        placeholder={isInputDisabled ? 'Aguarde...' : 'Descreva sua ação...'}
-                        className="flex-1 max-h-48 bg-transparent text-slate-300 placeholder:text-slate-500 focus:outline-none disabled:opacity-50 resize-none leading-relaxed py-2"
+                    <Composer
                         value={playerInput}
-                        onChange={(e) => setPlayerInput(e.target.value)}
+                        onValueChange={setPlayerInput}
+                        placeholder={isInputDisabled ? 'Aguarde...' : 'Descreva sua ação...'}
                         disabled={isInputDisabled}
-                        onKeyDown={handleKeyDown}
+                        maxLength={1400}
+                        onSubmitShortcut={() => {
+                            if (!isInputDisabled) {
+                                formRef.current?.requestSubmit();
+                            }
+                        }}
+                        className="flex-1"
                     />
                 </div>
                 <button

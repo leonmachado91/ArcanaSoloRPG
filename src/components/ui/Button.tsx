@@ -1,40 +1,57 @@
 // components/ui/Button.tsx
-// Componente de botão reutilizável que suporta diferentes estilos visuais (variantes),
-// um estado de carregamento e acessibilidade.
+// Botão Arcana com variantes alinhadas aos tokens do design system, foco acessível e estados de loading.
 
 import React from 'react';
 import Spinner from './Spinner';
 
+type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    /** Define o estilo visual do botão. */
-    variant?: 'primary' | 'secondary' | 'ghost';
-    /** O conteúdo a ser exibido dentro do botão (texto, ícones, etc.). */
-    children: React.ReactNode;
-    /** Se verdadeiro, exibe um spinner em vez do conteúdo e desabilita o botão. */
+    variant?: ButtonVariant;
+    size?: ButtonSize;
     isLoading?: boolean;
+    fullWidth?: boolean;
+    children: React.ReactNode;
 }
 
-const Button: React.FC<ButtonProps> = ({ variant = 'primary', children, className, isLoading = false, ...props }) => {
-    // Classes base aplicadas a todos os botões para consistência.
-    const baseClasses = 'font-bold rounded-lg transform transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed';
-    
-    // Mapeamento de variantes para classes de estilo específicas.
-    const variantStyles = {
-        primary: 'shadow-lg bg-amber-600 text-white border-b-4 border-amber-800 hover:bg-amber-500 hover:border-amber-700 focus:ring-amber-400 focus:ring-opacity-50 active:translate-y-0.5 active:border-b-2',
-        secondary: 'shadow-lg bg-zinc-800 text-slate-200 border-b-4 border-zinc-900 hover:bg-zinc-700 focus:ring-zinc-600 focus:ring-opacity-50 active:translate-y-0.5 active:border-b-2',
-        ghost: 'bg-transparent text-slate-300 hover:bg-zinc-800 hover:text-white shadow-none active:translate-y-0',
-    };
+const variantStyles: Record<ButtonVariant, string> = {
+    primary:
+        'bg-arcana-ember-500 text-arcana-parchment-50 shadow-arcana-card hover:bg-arcana-ember-400 focus-visible:ring-arcana-ember-300',
+    secondary:
+        'bg-arcana-ink-800 text-arcana-parchment-100 border border-arcana-ink-600 hover:border-arcana-ember-400 hover:text-white focus-visible:ring-arcana-aura-400',
+    ghost:
+        'bg-transparent text-arcana-parchment-100 border border-transparent hover:border-arcana-ink-600 hover:bg-white/5 focus-visible:ring-arcana-aura-400',
+};
 
-    // Botões `ghost` não precisam de padding, pois são geralmente usados para ícones.
-    const paddingClass = (variant === 'primary' || variant === 'secondary') ? 'px-6 py-3' : '';
+const sizeClasses: Record<ButtonSize, string> = {
+    sm: 'text-sm px-3 py-2 rounded-xl',
+    md: 'text-sm px-4 py-2.5 rounded-2xl',
+    lg: 'text-base px-6 py-3 rounded-2xl',
+    icon: 'p-2 rounded-2xl',
+};
+
+const Button: React.FC<ButtonProps> = ({
+    variant = 'primary',
+    size = 'md',
+    isLoading = false,
+    fullWidth = false,
+    children,
+    className,
+    ...props
+}) => {
+    const baseClasses =
+        'inline-flex items-center justify-center gap-2 font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-arcana-ink-900 disabled:opacity-50 disabled:cursor-not-allowed';
 
     return (
-        <button 
-            className={`${baseClasses} ${variantStyles[variant]} ${paddingClass} ${className || ''}`} 
-            disabled={isLoading || props.disabled} 
+        <button
+            className={`${baseClasses} ${variantStyles[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${
+                className || ''
+            }`}
+            disabled={isLoading || props.disabled}
+            aria-busy={isLoading}
             {...props}
         >
-            {/* Renderização condicional: mostra Spinner se `isLoading` for verdadeiro. */}
             {isLoading ? <Spinner /> : children}
         </button>
     );

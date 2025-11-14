@@ -49,7 +49,7 @@ const WelcomeScreen: React.FC = () => {
                 <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4 items-center">
                     <Input
                         label="Nome de Aventureiro"
-                        placeholder="Ex: Leon"
+                        placeholder="Insira seu nome aqui"
                         value={usernameInput}
                         onChange={(e) => setUsernameInput(e.target.value)}
                         className="text-center"

@@ -7,22 +7,28 @@ import { getConfig } from '@/services/configService';
 interface SettingsState {
     aiModels: Record<AiTask, string>;
     voice: string;
-    isRawModeEnabled: boolean;
     _hydrated: boolean;
 }
 
 interface SettingsActions {
     setAiModel: (task: AiTask, model: string) => void;
     setVoice: (voiceName: string) => void;
-    setIsRawModeEnabled: (enabled: boolean) => void;
 }
+
+const sanitizeAiModels = (models: Record<AiTask, string>): Record<AiTask, string> => {
+    const sanitized = { ...models };
+    const imageOptions = AI_MODEL_CONFIG.imageGeneration.available;
+    if (!imageOptions.includes(sanitized.imageGeneration)) {
+        sanitized.imageGeneration = imageOptions[0];
+    }
+    return sanitized;
+};
 
 const getDefaultSettings = (): Omit<SettingsState, '_hydrated'> => {
     const config = getConfig();
     return {
-        aiModels: config.ai.defaults,
+        aiModels: sanitizeAiModels(config.ai.defaults),
         voice: config.ai.defaultMasterVoice,
-        isRawModeEnabled: false,
     };
 };
 
@@ -31,11 +37,11 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         (set) => ({
             ...getDefaultSettings(),
             _hydrated: false, // Inicia como não hidratado
-            setAiModel: (task, model) => set((state) => ({
-                aiModels: { ...state.aiModels, [task]: model },
-            })),
+            setAiModel: (task, model) => set((state) => {
+                const updated = { ...state.aiModels, [task]: model };
+                return { aiModels: sanitizeAiModels(updated) };
+            }),
             setVoice: (voiceName) => set({ voice: voiceName }),
-            setIsRawModeEnabled: (enabled) => set({ isRawModeEnabled: enabled }),
         }),
         {
             name: 'arcana_rpg_settings', // Chave do localStorage
@@ -45,6 +51,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
                     if (error) {
                         console.warn("Falha ao hidratar as configurações, usando padrão.", error);
                     } else if (state) {
+                        state.aiModels = sanitizeAiModels(state.aiModels);
                         // Quando a reidratação é bem-sucedida, define a flag.
                         // Esta modificação será mesclada ao estado da store pelo middleware.
                         state._hydrated = true;

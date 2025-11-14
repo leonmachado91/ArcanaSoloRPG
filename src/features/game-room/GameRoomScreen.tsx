@@ -28,7 +28,7 @@ const GameRoomScreen: React.FC = () => {
         handleGenerateImage,
         handleGenerateCharacterImage,
         handleUploadCharacterImage,
-        generatingImageFor,
+        isCharacterBusy,
         handleExit,
         handleDeleteMessage,
     } = useGameRoom();
@@ -70,6 +70,8 @@ const GameRoomScreen: React.FC = () => {
         return () => registerBackAction(null);
     }, [handleExit, registerBackAction]);
 
+    const isPlayerImageGenerating = isCharacterBusy(playerCharacter.id);
+
     return (
         <div className="flex flex-1 flex-col bg-[#121212] min-h-0 h-full overflow-hidden">
             <GameRoomHeader
@@ -82,7 +84,7 @@ const GameRoomScreen: React.FC = () => {
             <GameRoomLayout
                 playerPanel={{
                     playerCharacter,
-                    generatingImageFor,
+                    isGeneratingImage: isPlayerImageGenerating,
                     onViewMore: openCharacterSheet,
                     onGenerateImage: handleGenerateCharacterImage,
                     onUploadImage: handleUploadCharacterImage,
@@ -121,7 +123,7 @@ const GameRoomScreen: React.FC = () => {
                 closeCharacterSheet={closeCharacterSheet}
                 handleGenerateCharacterImage={handleGenerateCharacterImage}
                 handleUploadCharacterImage={handleUploadCharacterImage}
-                generatingImageFor={generatingImageFor}
+                isCharacterBusy={isCharacterBusy}
                 playerCharacter={playerCharacter}
                 openCharacterSheet={openCharacterSheet}
                 npcsInScene={npcsInScene}

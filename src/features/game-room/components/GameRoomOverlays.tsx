@@ -19,7 +19,7 @@ interface GameRoomOverlaysProps {
     closeCharacterSheet: () => void;
     handleGenerateCharacterImage: (character: Character) => void;
     handleUploadCharacterImage: (character: Character, file: File) => void;
-    generatingImageFor: string | null;
+    isCharacterBusy: (characterId: string) => boolean;
     playerCharacter: Character;
     openCharacterSheet: (character: Character) => void;
     npcsInScene: Character[];
@@ -33,7 +33,7 @@ const GameRoomOverlays: React.FC<GameRoomOverlaysProps> = ({
     closeCharacterSheet,
     handleGenerateCharacterImage,
     handleUploadCharacterImage,
-    generatingImageFor,
+    isCharacterBusy,
     playerCharacter,
     openCharacterSheet,
     npcsInScene,
@@ -88,7 +88,7 @@ const GameRoomOverlays: React.FC<GameRoomOverlaysProps> = ({
                     variant="full" 
                     onGenerateImage={handleGenerateCharacterImage}
                     onUploadImage={handleUploadCharacterImage}
-                    isGeneratingImage={generatingImageFor === selectedCharacter.id}
+                    isGeneratingImage={isCharacterBusy(selectedCharacter.id)}
                 />}
             </Drawer>
 

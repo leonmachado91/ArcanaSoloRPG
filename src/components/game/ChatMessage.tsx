@@ -13,7 +13,7 @@ import { useAudioStore } from '@/store/audioStore';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 
 interface ChatMessageProps {
-    /** O objeto da mensagem a ser renderizado. */
+    /** O objeto da mensagem a ser renderizada. */
     message: Message;
     /** O ID do personagem do jogador, para identificação correta do autor. */
     playerId: string;
@@ -21,9 +21,11 @@ interface ChatMessageProps {
     onGenerateImage: (message: Message) => void;
     /** Função de callback para apagar a mensagem. */
     onDelete: (messageId: string) => void;
+    /** Quando verdadeiro, oculta avatar e cabeçalho para agrupar com a mensagem anterior. */
+    hideAuthorMetadata?: boolean;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, playerId, onGenerateImage, onDelete }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, playerId, onGenerateImage, onDelete, hideAuthorMetadata = false }) => {
     // Hook para controlar a reprodução de áudio.
     const { playAudio, stopAudio, isLoading, isPlaying, currentMessageId } = useAudioStore();
 
@@ -150,36 +152,43 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, playerId, onGenerate
     const bubbleClasses = isPlayer ? playerBubbleClasses : companionBubbleClasses;
     // Adiciona padding (pl-12/pr-12) para criar espaço para os botões de ação que aparecerão no hover.
     const defaultContainerClasses = `group relative flex items-start gap-3 max-w-2xl ${isPlayer ? 'ml-auto flex-row-reverse pl-12' : 'pr-12'}`;
+    const shouldHideMetadata = hideAuthorMetadata && (isPlayer || isCompanion) && !isOff;
 
     return (
         <div className={defaultContainerClasses}>
             {/* Avatar do autor da mensagem */}
-            <div className="w-10 h-10 rounded-full flex-shrink-0 bg-zinc-800">
-                {isPlayer && (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-600 border-2 border-amber-500/50">
-                        {message.author?.imageUrl ? (
-                            <img src={message.author.imageUrl} alt={message.authorName} className="w-full h-full object-cover rounded-full" />
-                        ) : (
-                            <Icon name="player" className="w-6 h-6 text-white" />
+            <div className={`w-10 h-10 rounded-full flex-shrink-0 ${shouldHideMetadata ? 'opacity-0' : ''}`}>
+                {!shouldHideMetadata && (
+                    <>
+                        {isPlayer && (
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-600 border-2 border-amber-500/50">
+                                {message.author?.imageUrl ? (
+                                    <img src={message.author.imageUrl} alt={message.authorName} className="w-full h-full object-cover rounded-full" />
+                                ) : (
+                                    <Icon name="player" className="w-6 h-6 text-white" />
+                                )}
+                            </div>
                         )}
-                    </div>
-                )}
-                {isCompanion && (
-                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-700 border-2 border-zinc-600">
-                        {message.author?.imageUrl ? (
-                            <img src={message.author.imageUrl} alt={message.authorName} className="w-full h-full object-cover rounded-full" />
-                        ) : (
-                            <Icon name="companion" className="w-6 h-6 text-slate-400" />
+                        {isCompanion && (
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-700 border-2 border-zinc-600">
+                                {message.author?.imageUrl ? (
+                                    <img src={message.author.imageUrl} alt={message.authorName} className="w-full h-full object-cover rounded-full" />
+                                ) : (
+                                    <Icon name="companion" className="w-6 h-6 text-slate-400" />
+                                )}
+                            </div>
                         )}
-                    </div>
+                    </>
                 )}
             </div>
             
             {/* Balão de Mensagem */}
             <div className="flex-1">
-                <p className={`text-sm font-bold mb-1 ${isPlayer ? 'text-right' : 'text-left'}`}>
-                    {message.authorName}
-                </p>
+                {!shouldHideMetadata && (
+                    <p className={`text-sm font-bold mb-1 ${isPlayer ? 'text-right' : 'text-left'}`}>
+                        {message.authorName}
+                    </p>
+                )}
                 <div className={`rounded-lg p-4 ${bubbleClasses}`}>
                     {isOff && (
                         <span className="font-bold text-xs uppercase opacity-70 block mb-1 tracking-wider">

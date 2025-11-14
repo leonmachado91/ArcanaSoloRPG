@@ -3,7 +3,7 @@
 // Ele recebe a ação do jogador, atualiza o estado, persiste os dados e,
 // futuramente, irá interagir com a IA para gerar a resposta do mestre.
 
-import { GameState, GameAction, createAppError, isAppError } from '../types/game';
+import { GameState, GameAction, createAppError, isAppError, formatErrorForDisplay } from '../types/game';
 import { DiceRoll, Message } from '../types/chat';
 import { logEvent } from '../store/devLogStore';
 import { engineService } from './engineService';
@@ -19,6 +19,7 @@ import { OracleTableName } from '@/data/rules/oracles';
 // FIX: Added import for useCatalogStore to resolve 'Cannot find name' error.
 import { useCatalogStore } from '@/store/catalogStore';
 import { usePromptStore } from '@/store/promptStore';
+import { resolvePrompt } from '@/services/ai/promptFallbacks';
 
 // Importa os novos handlers de ferramentas
 import { handleApplyCondition } from './ai/tools/handlers/applyConditionHandler';
@@ -26,6 +27,7 @@ import { handleAddProgress } from './ai/tools/handlers/addProgressHandler';
 import { handleEndTurn } from './ai/tools/handlers/endTurnHandler';
 import { handleOracleQuery } from './ai/tools/handlers/oracleQueryHandler';
 import { handleModifyInventory } from './ai/tools/handlers/inventoryHandler';
+import { sceneMemoryOrchestrator } from '@/orchestrators/sceneMemoryOrchestrator';
 
 
 /**
@@ -112,10 +114,7 @@ const startNewGameScene = async (
     const context = 'gameMasterService.startNewGameScene';
     try {
         const { prompts } = usePromptStore.getState();
-        const sceneStartPrompt = prompts['SCENE_START_NARRATION_PROMPT']?.content;
-        if (!sceneStartPrompt) {
-            throw createAppError('UNKNOWN_ERROR', "Prompt 'SCENE_START_NARRATION_PROMPT' não encontrado.", null, context);
-        }
+        const sceneStartPrompt = resolvePrompt(prompts, 'SCENE_START_NARRATION_PROMPT', context).value;
 
         const firstScene = state.campaign.scenes?.find(s => s.sceneNumber === 1);
         
@@ -284,6 +283,22 @@ const executeSceneChange = async (): Promise<void> => {
 
     const oldActiveScene = state.campaign.scenes?.find(s => s.isActive);
     if (oldActiveScene) {
+        try {
+            const loreEntry = await sceneMemoryOrchestrator.archiveScene(oldActiveScene, state);
+            if (loreEntry) {
+                const latestState = useGameStore.getState();
+                const currentLore = latestState.campaign.lore || [];
+                dispatch({ type: 'UPDATE_CAMPAIGN', payload: { lore: [...currentLore, loreEntry] } });
+            }
+        } catch (error) {
+            const friendly = formatErrorForDisplay(error, 'Falha ao consolidar a cena anterior.');
+            logEvent({
+                type: 'system',
+                message: 'SceneMemory falhou ao consolidar cena.',
+                payload: { sceneId: oldActiveScene.id, error: friendly },
+            });
+        }
+
         await sceneService.updateSceneData(oldActiveScene.id, { isActive: false });
         dispatch({ type: 'UPDATE_SCENE', payload: { sceneId: oldActiveScene.id, data: { isActive: false } } });
     }
