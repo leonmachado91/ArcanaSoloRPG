@@ -5,13 +5,10 @@ import { useGameStore } from '@/store/useGameStore';
 import { Character } from '@/types/character';
 import { Message } from '@/types/chat';
 import { getConfig } from '@/services/configService';
-import { createAppError, formatErrorForDisplay } from '@/types/game';
 import { fileToDataUrl } from '@/utils/fileUtils';
 import * as characterService from '@/services/db/character.service';
 import { useErrorStore } from '@/store/errorStore';
 import { logEvent } from '@/store/devLogStore';
-import * as chatService from '@/services/db/chat.service';
-import { imageGenerationService, ImageGenerationMetrics } from '@/services/ai/imageGenerationService';
 
 type ImageJobStatus = 'queued' | 'processing' | 'success' | 'error';
 type ImageJobAction = 'upload' | 'generate';
@@ -29,7 +26,7 @@ interface ImageJob {
     requestedAt: number;
     completedAt?: number;
     resultUrl?: string;
-    metrics?: ImageGenerationMetrics;
+    metrics?: Record<string, unknown>;
     model?: string;
 }
 
@@ -55,7 +52,6 @@ const jobReducer = (state: ImageJob[], action: JobReducerAction): ImageJob[] => 
  */
 export const useCharacterImageManager = () => {
     const dispatch = useGameStore(state => state.dispatch);
-    const campaign = useGameStore(state => state.campaign);
     const playerCharacter = useGameStore(state => state.playerCharacter);
     const npcs = useGameStore(state => state.npcs);
     const { showError } = useErrorStore();
@@ -134,128 +130,19 @@ export const useCharacterImageManager = () => {
         return status === 'queued' || status === 'processing';
     }, [characterJobStatuses]);
 
-    const setMessageGeneratingState = useCallback(async (messageId: string, isGenerating: boolean) => {
-        dispatch({ type: 'UPDATE_MESSAGE', payload: { id: messageId, data: { isGeneratingImage: isGenerating } } });
-        try {
-            await chatService.updateChatMessage(messageId, { isGeneratingImage: isGenerating });
-        } catch (error) {
-            console.warn('[useCharacterImageManager] Falha ao sincronizar estado de geração da mensagem.', error);
-        }
-    }, [dispatch]);
+    const handleGenerateImage = useCallback(
+        async (_message: Message) => {
+            showError('A geração de imagens ainda não foi implementada nesta versão.');
+        },
+        [showError],
+    );
 
-    const resolveSceneForMessage = useCallback((message: Message) => {
-        const scenes = campaign.scenes || [];
-        return scenes.find(scene => scene.id === message.sceneId)
-            || scenes.find(scene => scene.isActive)
-            || null;
-    }, [campaign.scenes]);
-
-    const resolveSceneForCharacter = useCallback((characterId: string) => {
-        const scenes = campaign.scenes || [];
-        return scenes.find(scene => scene.characterIds?.includes(characterId))
-            || scenes.find(scene => scene.isActive)
-            || null;
-    }, [campaign.scenes]);
-
-    const collectCharactersForScene = useCallback((scene: ReturnType<typeof resolveSceneForMessage>) => {
-        if (!scene) {
-            return [playerCharacter, ...npcs];
-        }
-        const ids = new Set(scene.characterIds || []);
-        const list: Character[] = [];
-        if (ids.has(playerCharacter.id)) {
-            list.push(playerCharacter);
-        }
-        npcs.forEach(npc => {
-            if (ids.has(npc.id)) {
-                list.push(npc);
-            }
-        });
-        if (list.length === 0) {
-            list.push(playerCharacter);
-        }
-        return list;
-    }, [npcs, playerCharacter]);
-
-    /**
-     * Gera uma arte para a mensagem do chat utilizando o serviço dedicado.
-     */
-    const handleGenerateImage = useCallback(async (message: Message) => {
-        const job = enqueueJob({
-            action: 'generate',
-            targetType: 'message',
-            targetId: message.id,
-            label: `Gerar imagem para a mensagem ${message.id}`,
-        });
-
-        try {
-            if (!campaign.id) {
-                throw createAppError('VALIDATION_ERROR', 'Campanha inválida. Recarregue o jogo.', null, 'useCharacterImageManager.handleGenerateImage');
-            }
-            markJobProcessing(job.id);
-            await setMessageGeneratingState(message.id, true);
-
-            const scene = resolveSceneForMessage(message);
-            if (!scene) {
-                throw createAppError('VALIDATION_ERROR', 'Não foi possível identificar a cena desta mensagem.', { messageId: message.id }, 'useCharacterImageManager.handleGenerateImage');
-            }
-
-            const charactersInScene = collectCharactersForScene(scene);
-            const result = await imageGenerationService.generateSceneIllustration({
-                campaign,
-                scene,
-                narrationMessage: message,
-                charactersInScene,
-            });
-
-            dispatch({ type: 'UPDATE_MESSAGE', payload: { id: message.id, data: { imageUrl: result.imageUrl } } });
-            await chatService.updateChatMessage(message.id, { imageUrl: result.imageUrl });
-            markJobSuccess(job, { resultUrl: result.imageUrl, metrics: result.metrics, model: result.modelUsed });
-        } catch (error) {
-            const friendly = formatErrorForDisplay(error, "Falha ao processar a geração de imagem da cena.");
-            markJobError(job, friendly);
-            showError(friendly);
-        } finally {
-            await setMessageGeneratingState(message.id, false);
-        }
-    }, [campaign, collectCharactersForScene, dispatch, enqueueJob, markJobError, markJobProcessing, markJobSuccess, resolveSceneForMessage, setMessageGeneratingState, showError]);
-    
-    /**
-     * Gera uma nova arte para o retrato de um personagem via IA.
-     */
-    const handleGenerateCharacterImage = useCallback(async (character: Character) => {
-        const job = enqueueJob({
-            action: 'generate',
-            targetType: 'character',
-            targetId: character.id,
-            label: `Gerar imagem para ${character.name || character.id}`,
-        });
-
-        try {
-            if (!campaign.id) {
-                throw createAppError('VALIDATION_ERROR', 'Campanha inválida. Recarregue o jogo.', null, 'useCharacterImageManager.handleGenerateCharacterImage');
-            }
-            markJobProcessing(job.id);
-
-            const scene = resolveSceneForCharacter(character.id);
-            const result = await imageGenerationService.generateCharacterPortrait({
-                campaign,
-                character,
-                arcanaContext: scene?.arcanaCardsDrawn,
-            });
-
-            await characterService.updateCharacterData(character.id, { imageUrl: result.imageUrl });
-            dispatch({
-                type: 'UPDATE_CHARACTER_DATA',
-                payload: { characterId: character.id, data: { imageUrl: result.imageUrl } }
-            });
-            markJobSuccess(job, { resultUrl: result.imageUrl, metrics: result.metrics, model: result.modelUsed });
-        } catch (error) {
-            const friendly = formatErrorForDisplay(error, "Falha ao gerar a imagem do personagem.");
-            markJobError(job, friendly);
-            showError(friendly);
-        }
-    }, [campaign, dispatch, enqueueJob, markJobError, markJobProcessing, markJobSuccess, resolveSceneForCharacter, showError]);
+    const handleGenerateCharacterImage = useCallback(
+        async (_character: Character) => {
+            showError('A geração de imagens ainda não foi implementada nesta versão.');
+        },
+        [showError],
+    );
     
     /**
      * Manipula o upload de um arquivo de imagem para um personagem.
